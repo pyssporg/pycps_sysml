@@ -38,7 +38,14 @@ answers it the same way for the SSP and the FMI domain.
   `DialectPolicy`, and `ControlAttributes` select the domain (INFO-003). SSP
   metadata, FMU metadata, experiments, parameter interfaces and sets, and the
   `pyssp_*` control attributes are all readable through this package.
+- **Validation.** `validate(architecture, composition=None, ...)` runs the
+  role, marker, control, parameter, and FMU checks as one `ValidationReport`
+  with stable codes; `require_fmu_metadata` returns per-component problems
+  without raising. A report renders one `PASS` per check and one `FAIL` per
+  issue.
 
 **Contract.** Every domain-sensitive entry point takes its policy keyword-only
-and required. No artifact is read or written. Failures raise `FileNotFoundError`
-or `ValueError` naming the member, its owner, and the path involved.
+and required. `validate` is the report entry point and therefore defaults to the
+SSP vocabulary; pass `roles=` and `policy=` for another dialect. No artifact is
+read or written. Failures raise `FileNotFoundError` or `ValueError` naming the
+member, its owner, and the path involved.

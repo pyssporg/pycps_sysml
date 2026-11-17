@@ -51,6 +51,7 @@ FILE_LEVELS: dict[str, tuple[str, ...]] = {
     "test_policy_injection.py": ("unit",),
     "test_selection_model.py": ("unit",),
     "test_sysml_model.py": ("unit", "component"),
+    "test_validation.py": ("unit",),
     "test_variation_model.py": ("unit",),
 }
 

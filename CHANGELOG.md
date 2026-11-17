@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `validate(architecture, composition=None, *, roles=SSP_ROLES, policy=SSP_POLICY)`
+  runs every applicable dialect validator as one `ValidationReport` with stable
+  check codes, instead of stopping at the first `ValueError`.
+- `require_fmu_metadata(architecture, part_defs, *, implementation=None)`
+  returns the missing or mismatched FMU metadata of leaf part definitions as
+  messages, without raising.
+
 ## [0.2.0] - 2026-11-09
 
 ### Added

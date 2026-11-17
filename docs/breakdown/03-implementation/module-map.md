@@ -9,8 +9,8 @@ status: current
 
 # Module map
 
-`src/pycps_sysml2/` is split by concern; the root re-exports `load` and the
-dataclasses.
+`src/pycps_sysml2/` is split by concern; the root re-exports `load`, the
+dataclasses, and the validation report.
 
 | module | responsibility | may import |
 |---|---|---|
@@ -28,6 +28,7 @@ dataclasses.
 | `parameters/policy.py` | `DialectPolicy` and `SSP_POLICY` | `metadata`, `core` |
 | `parameters/configuration.py`, `variation.py`, `selection.py`, `constraints.py` | configuration capture, resolution, analysis plans, constraint evaluation | `metadata`, `core`, `model` |
 | `parameters/dialect/` | markers, declarations, composition, mapping | `metadata`, `core`, `model` |
+| `validation.py` | report-style entry point over the dialect validators; stable check codes | `model`, `metadata`, `parameters` |
 
 **Layering rule.** `model` ← `core` ← `metadata` ← `parameters`, with
 `parameters/dialect` above `metadata`. Nothing below `parameters` imports

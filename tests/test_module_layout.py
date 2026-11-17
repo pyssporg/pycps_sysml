@@ -15,7 +15,7 @@ PROJECT = Path(__file__).resolve().parents[1]
 PACKAGE = PROJECT / "src" / "pycps_sysml2"
 
 #: The documented public surface. Nothing else may sit at the package root.
-ROOT_MODULES = frozenset({"__init__.py"})
+ROOT_MODULES = frozenset({"__init__.py", "validation.py"})
 
 #: Domain packages. A new top-level package is a deliberate edit to this list.
 #: Absence is not a layout fault: a package may land in a later extraction step,

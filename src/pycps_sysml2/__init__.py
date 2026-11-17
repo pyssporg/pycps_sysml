@@ -7,7 +7,8 @@ gives one object to reach the dialect from:
 
 - :mod:`pycps_sysml2.core` — control attributes and FMI type helpers;
 - :mod:`pycps_sysml2.metadata` — role and typed-metadata accessors;
-- :mod:`pycps_sysml2.parameters` — variation, selection, constraints, dialect.
+- :mod:`pycps_sysml2.parameters` — variation, selection, constraints, dialect;
+- :mod:`pycps_sysml2.validation` — one report over the dialect validators.
 """
 
 from pycps_sysml2.definitions import core_definitions
@@ -37,6 +38,12 @@ __version__ = "0.2.0"
 # Bound after the model so a subpackage that reads model types cannot re-enter
 # a half-initialised root module.
 from pycps_sysml2 import core, metadata, parameters  # noqa: E402
+from pycps_sysml2.validation import (  # noqa: E402
+    ValidationIssue,
+    ValidationReport,
+    validate,
+)
+from pycps_sysml2.metadata import require_fmu_metadata  # noqa: E402
 
 __all__ = [
     "Architecture",
@@ -53,6 +60,8 @@ __all__ = [
     "PortDefinition",
     "PortUsage",
     "RequirementDefinition",
+    "ValidationIssue",
+    "ValidationReport",
     "VariantBody",
     "VariantMember",
     "__version__",
@@ -62,4 +71,6 @@ __all__ = [
     "load",
     "metadata",
     "parameters",
+    "require_fmu_metadata",
+    "validate",
 ]

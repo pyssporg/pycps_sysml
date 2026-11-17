@@ -15,7 +15,8 @@ status: current
 `parameters/dialect` sits above `metadata`. Nothing below `parameters` imports
 `parameters`, and no module below `metadata` imports a marker constant or calls
 `is_ssp_model`/`is_analysis`/`is_fmu_model`; a static layering test enforces both
-rules.
+rules. `validation.py` at the package root sits above `parameters` and composes
+their validators into one report.
 
 **The IR.** `Architecture` is a merged, insertion-ordered dataclass tree
 (definitions, usages, attributes, ports, connections, bindings, constraints,

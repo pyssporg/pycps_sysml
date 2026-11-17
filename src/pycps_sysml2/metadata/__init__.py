@@ -18,6 +18,7 @@ from pycps_sysml2.metadata.fmu_metadata import (
     ensure_fmu_metadata_definition,
     fmu_metadata,
     is_fmu_metadata_definition,
+    require_fmu_metadata,
     update_fmu_metadata_from_component,
     validate_retired_control_attributes,
 )
@@ -84,6 +85,7 @@ __all__ = [
     "is_ssp_model",
     "model_usage",
     "read_experiment",
+    "require_fmu_metadata",
     "require_resolved_variation",
     "ssp_metadata",
     "update_fmu_metadata_from_component",

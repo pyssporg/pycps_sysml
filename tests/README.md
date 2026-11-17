@@ -39,6 +39,8 @@ reviewed.
   directory merge rules, every captured field, and the export round trip.
 - `tests/test_control_attributes.py` — the injectable control-attribute
   vocabulary: default prefix, custom prefix, retired names, injected map.
+- `tests/test_validation.py` — the report entry point: one failing fixture per
+  check code, the `PASS`/`FAIL` layout, and `raise_for_issues`.
 - `tests/test_layering.py` — no upstream package imports in `src/`, one version
   source, one level marker per test.
 - `tests/test_module_layout.py` — package root and subpackage layout, `sysmlpy`

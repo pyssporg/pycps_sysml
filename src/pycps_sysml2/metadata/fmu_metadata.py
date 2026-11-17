@@ -30,6 +30,7 @@ from the part definition name.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 
 from pycps_sysml2.core.control import CONTROL, ControlAttributes
@@ -332,6 +333,44 @@ def update_fmu_metadata_from_component(
         architecture.attribute_definitions.pop(
             architecture.stored_key(definition), None
         )
+
+
+def require_fmu_metadata(
+    architecture: Architecture,
+    part_defs: Iterable[PartDefinition],
+    *,
+    implementation: str | None = None,
+) -> tuple[str, ...]:
+    """Report FMU metadata problems for leaf part definitions, never raising.
+
+    Generation fails fast, where the first bad component is enough. A model
+    author asking what is missing needs every component in one pass, so this
+    returns the problems instead. A definition with subparts is a nested system
+    and is skipped: it cannot also be an FMU component.
+    """
+    problems: list[str] = []
+    for part_def in part_defs:
+        if part_def.parts:
+            continue
+        try:
+            metadata = fmu_metadata(architecture, part_def)
+        except ValueError as error:
+            problems.append(f"{part_def.name}: {error}")
+            continue
+        if metadata is None:
+            problems.append(
+                f"{part_def.name}: no FMU metadata; declare "
+                f"'attribute {FMU_METADATA_ATTR} : <Name>FmuMetadata;'"
+            )
+            continue
+        if not metadata.source:
+            problems.append(f"{part_def.name}: FMU metadata has no 'source'")
+        if implementation is not None and metadata.implementation != implementation:
+            problems.append(
+                f"{part_def.name}: implementation is "
+                f"{metadata.implementation!r}, expected {implementation!r}"
+            )
+    return tuple(problems)
 
 
 def validate_retired_control_attributes(

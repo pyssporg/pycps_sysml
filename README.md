@@ -98,6 +98,21 @@ exact policy argument: every public entry point under `parameters/` requires it
 and supplies no default. `SSP_POLICY.roles` is `SSP_ROLES`; another domain
 constructs its own `RolePolicy` or `DialectPolicy`.
 
+Run the dialect checks as one report instead of stopping at the first failure:
+
+```python
+from pycps_sysml2 import validate
+
+report = validate(architecture, "PlantComposition")
+print(report.format())          # one PASS per check, one FAIL line per issue
+report.raise_for_issues()       # ValueError with every message; no-op when ok
+```
+
+`validate` starts from the SSP vocabulary and takes `roles=` and `policy=` to
+override it. A composition root enables the parameter check and narrows the FMU
+check to its component definitions; without one, every leaf part definition
+except the role markers is checked.
+
 ## Multi-root loading and core definitions
 
 `load()` takes one primary model root plus any number of included definition

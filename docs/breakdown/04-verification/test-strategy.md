@@ -15,7 +15,7 @@ evidence for, not how long it runs.
 | marker | the test proves |
 |---|---|
 | `static` | a property of the source or the tree: layout, layering, fixture policy, one version source |
-| `unit` | one object's behaviour: parser values, loader merge, configuration capture, resolution, constraints |
+| `unit` | one object's behaviour: parser values, loader merge, configuration capture, resolution, constraints, report collection |
 | `component` | a produced document is the unit: the exported SysML text is compared as a whole |
 | `contract` | two directions agree: export then reload, constraint capture then evaluation |
 | `system` | the public API is driven as a consumer would, from the installed package |

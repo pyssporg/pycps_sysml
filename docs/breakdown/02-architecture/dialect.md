@@ -40,6 +40,14 @@ exported as defaults (`SSP_MODEL_MARKER`, `ANALYSIS_MARKER`,
 writes nothing; a caller that wants another domain constructs the policy
 (INFO-003).
 
+**Validation.** The dialect validators stay fail-fast, because a generator has
+nothing to emit after the first bad marker. `pycps_sysml2.validation.validate`
+calls each one in turn and collects the `ValueError` under a stable check code:
+`role-markers`, `marker-kinds`, `retired-control-attributes`,
+`parameter-dialect` (when a composition root is given), and `fmu-metadata`.
+`require_fmu_metadata` is the one FMU assertion that returns its problems
+instead of raising, so a report can name every leaf component at once.
+
 **Core vocabulary.** The eight markers and metadata schemas in the table ship in
 one packaged file, `definitions/core.sysml`; a model loads it as one included
 root with `load(model, core_definitions())` instead of declaring the names
