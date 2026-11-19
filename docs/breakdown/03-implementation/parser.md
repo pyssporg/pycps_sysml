@@ -26,9 +26,10 @@ imports are collected in the per-file pass, not from the merged model.
 
 **Declarations.** Each package yields part, port, attribute, requirement, and
 constraint definitions; each definition keeps its members, specialization
-list, doc text, and `source_file`. The same pass reads the package's `import`
-declarations as `(package, member)` pairs (`None` for `::*`), preferring the
-structured grammar objects and falling back to `dump()` text. Port direction
+list, doc text, and `source_file`. A usage or attribute also keeps the targets
+of `:>>` redefinition and `:>` subsetting as `redefines` and `subsets`. The
+same pass reads the package's `import` declarations as `(package, member)` pairs
+(`None` for `::*`), preferring the structured grammar objects and falling back to `dump()` text. Port direction
 comes from the grammar prefix, not the public port object. Connection and
 binding endpoints come from the feature chains, so a dotted end keeps both
 names and a bare end stays a boundary endpoint with no part. Multiplicity comes

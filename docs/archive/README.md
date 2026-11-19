@@ -22,6 +22,10 @@ Records live in the cold-storage archive; extract one with `pb archive read <ID>
   A qualified definition is visible only if its package is imported; unknown targets stay a loader-untouched concern for analyze.
 - **DEC-005** — Typed containers replace the pyssp_* vocabulary · accepted · 2026-11-19 · `DEC-005`
   Special data is carried by typed attribute containers; the name-prefixed attributes and the flat-connector model rule are removed.
+- **DEC-006** — Inheritance resolves on demand in the model layer · accepted · 2026-11-19 · `DEC-006`
+  A definition keeps only its declared members; effective_members merges ancestors on demand, and exporters stay declared-only.
+- **DEC-007** — Sourced metadata base and optional experiment tolerance · accepted · 2026-11-19 · `DEC-007`
+  FmuMetadata and SspMetadata share SourcedMetadata, and DefaultExperiment carries an optional, positive FMI tolerance with no numeric defaults.
 
 ### Implementation
 

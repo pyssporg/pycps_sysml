@@ -19,16 +19,27 @@ dataclasses, and the validation report.
 | `model/parser.py` | one file to declarations: values, directions, multiplicity, supertypes, constraint usages | `sysmlpy`, `model.names`, `model.model`, `model.source` |
 | `model/source.py` | authored source text: connection endpoints, comment/string masking, constraint bodies | `model.model` |
 | `model/variation.py` | the raw ANTLR walk: variation points, variants, configuration bodies | `sysmlpy`, `model.model` |
-| `model/loader.py` | primary-root file walk, one merged parse, IR construction, duplicate rejection | all of `model` |
+| `model/loader.py` | primary-root file walk, one merged parse, IR construction, duplicate rejection, opt-in specialization analysis | all of `model` |
 | `model/attribution.py` | per-file scan: packages, variation facts, constraint bodies, definition-to-file attribution | `model.parser`, `model.source`, `model.variation`, `model.names` |
+| `model/effective.py` | on-demand inherited member view: `EffectiveMembers` and `effective_members` | `model.model` |
+| `model/semantics.py` | sysmlpy specialization issues translated to repo-owned `SemanticIssue` | `model.model`, `model.parser` |
 | `definitions/` | the packaged core vocabulary and `core_definitions()` | stdlib |
 | `core/control.py`, `core/fmi_helpers.py` | the retired `pyssp_*` migration map and residual catch-all; FMI helpers | `model` |
-| `metadata/helpers.py` | the single copy of `short_name`, `specializes_marker`, `effective_members` | `model` |
+| `metadata/helpers.py` | the single copy of `short_name` and `specializes_marker`; the legacy attribute-only `effective_members` wrapper | `model` |
 | `metadata/roles.py`, `metadata/ssp_metadata.py`, `metadata/fmu_metadata.py` | role policy, SSP metadata, FMI metadata | `model`, `core`, `metadata.helpers` |
 | `parameters/policy.py` | `DialectPolicy` and `SSP_POLICY` | `metadata`, `core` |
 | `parameters/configuration.py`, `variation.py`, `selection.py`, `constraints.py` | configuration capture, resolution, analysis plans, constraint evaluation | `metadata`, `core`, `model` |
 | `parameters/dialect/` | markers, declarations, composition, mapping | `metadata`, `core`, `model` |
 | `validation.py` | report-style entry point over the dialect validators; stable check codes | `model`, `metadata`, `parameters` |
+
+**Inheritance.** `effective_members(architecture, definition)` merges ancestors
+first into `EffectiveMembers` (attributes, ports, parts, connections, bindings,
+constraints); a derived member wins by name and keeps the inherited position,
+and a derived attribute with no value keeps the inherited value. The walk is
+cycle-guarded, skips an unknown or wrong-kind supertype silently, and writes
+nothing back. `metadata/helpers.effective_members` and
+`parameters/constraints._effective_members` delegate to it; exporters stay
+declared-only.
 
 **Layering rule.** `model` ← `core` ← `metadata` ← `parameters`, with
 `parameters/dialect` above `metadata`. Nothing below `parameters` imports

@@ -11,8 +11,12 @@ status: current
 
 `src/pycps_sysml2/definitions/core.sysml` is the single copy of the shared
 vocabulary (`package PysspCore`): `SspModel`, `Analysis`, `FmuModel`,
-`ParameterInterface`, `ParameterSet`, `FmuMetadata`, `SspMetadata`,
-`DefaultExperiment`, and `Experiment` (`:> DefaultExperiment`).
+`ParameterInterface`, `ParameterSet`, `SourcedMetadata`, `FmuMetadata`,
+`SspMetadata`, `DefaultExperiment`, and `Experiment` (`:> DefaultExperiment`).
+`FmuMetadata` and `SspMetadata` inherit `source` from `SourcedMetadata`.
+`DefaultExperiment` carries `startTime`, `stopTime`, `stepSize`, and
+`tolerance`; no field authors a numeric default, so an unset value stays unset.
+`tolerance` is optional and must be positive when present.
 
 - **Package data:** `pyproject.toml` lists `definitions/*.sysml`, so the wheel
   carries the file; `core_definitions()` returns it as a real `Path` and

@@ -10,6 +10,7 @@ The marker definitions are ordinary SysML definitions in the model package::
       attribute startTime : Real;
       attribute stopTime : Real;
       attribute stepSize : Real;
+      attribute tolerance : Real;
     }
     attribute def Experiment :> DefaultExperiment;
 
@@ -23,7 +24,9 @@ An experiment is also a typed attribute container: ``attribute defaults : <X>;``
 where ``<X>`` specializes ``DefaultExperiment``. ``startTime`` and ``stopTime``
 are always required. ``stepSize`` is required only when the type specializes
 ``Experiment`` (which itself specializes ``DefaultExperiment``); a plain
-``DefaultExperiment`` may omit it.
+``DefaultExperiment`` may omit it. ``tolerance`` is the FMI 2.0 default
+experiment tolerance and is optional everywhere; when present it must be
+positive.
 
 The functions are usable standalone, and :class:`RolePolicy` bundles them so a
 consumer that owns a different role vocabulary can inject a predicate instead of
@@ -36,7 +39,6 @@ from dataclasses import dataclass
 from typing import Callable
 
 from pycps_sysml2.metadata.helpers import (
-    effective_members,
     short_name,
     specializes_marker_deep,
 )
@@ -46,6 +48,7 @@ from pycps_sysml2.model import (
     AttributeDefinition,
     PartDefinition,
     PartUsage,
+    effective_members,
 )
 
 SSP_MODEL_MARKER = "SspModel"
@@ -54,7 +57,7 @@ FMU_MODEL_MARKER = "FmuModel"
 DEFAULT_EXPERIMENT_MARKER = "DefaultExperiment"
 EXPERIMENT_MARKER = "Experiment"
 
-EXPERIMENT_FIELDS = ("startTime", "stopTime", "stepSize")
+EXPERIMENT_FIELDS = ("startTime", "stopTime", "stepSize", "tolerance")
 
 
 @dataclass(frozen=True)
@@ -63,14 +66,15 @@ class Experiment:
 
     ``step_size`` is ``None`` when the container specializes only
     ``DefaultExperiment``; a type specializing ``Experiment`` must set it.
-    Tolerance is not part of the experiment: it is a property of the composed
-    FMUs and is read from their model descriptions by the simulation stage.
+    ``tolerance`` is the optional FMI 2.0 default-experiment tolerance: ``None``
+    means it was not authored, so the composed model description supplies it.
     """
 
     name: str
     start_time: float
     stop_time: float
     step_size: float | None
+    tolerance: float | None = None
 
 
 def is_ssp_model(architecture: Architecture, definition: PartDefinition) -> bool:
@@ -123,7 +127,7 @@ def _variation_point(
     if key in seen:
         return None
     seen.add(key)
-    for usage in definition.parts.values():
+    for usage in effective_members(architecture, definition).parts.values():
         if usage.is_variation:
             return usage.name
         found = _variation_point(architecture, architecture.resolve_part(usage), seen)
@@ -190,7 +194,7 @@ def model_usage(
 ) -> tuple[PartUsage, PartDefinition]:
     """The single exportable model usage composed by an analysis."""
     usages: list[tuple[PartUsage, PartDefinition]] = []
-    for usage in analysis.parts.values():
+    for usage in effective_members(architecture, analysis).parts.values():
         definition = architecture.resolve_part(usage)
         if definition is None:
             raise ValueError(
@@ -220,7 +224,7 @@ def experiment_attribute(
     always rejected.
     """
     found: list[tuple[str, Attribute, AttributeDefinition]] = []
-    for name, attribute in part_def.attributes.items():
+    for name, attribute in effective_members(architecture, part_def).attributes.items():
         definition = architecture.resolve_attribute_def(attribute)
         if is_experiment_definition(
             architecture, definition
@@ -256,6 +260,8 @@ def read_experiment(
     ``stepSize`` is mandatory only when the container's type specializes
     ``Experiment``; a plain ``DefaultExperiment`` may omit it, in which case
     ``Experiment.step_size`` is ``None``. When present it must be positive.
+    ``tolerance`` is optional, read through the same effective-member view, and
+    must be positive when authored; ``None`` means it was not authored.
     """
     attribute = experiment_attribute(architecture, part_def, required=required)
     if attribute is None:
@@ -264,10 +270,12 @@ def read_experiment(
     members = effective_members(architecture, definition)
     values: dict[str, float] = {}
     for field in ("startTime", "stopTime"):
-        values[field] = _numeric_member(definition, members.get(field), field)
+        values[field] = _numeric_member(
+            definition, members.attributes.get(field), field
+        )
 
     step_size: float | None = None
-    step_attribute = members.get("stepSize")
+    step_attribute = members.attributes.get("stepSize")
     if is_experiment_definition(architecture, definition):
         if step_attribute is None or step_attribute.value is None:
             raise ValueError(
@@ -276,18 +284,26 @@ def read_experiment(
     if step_attribute is not None and step_attribute.value is not None:
         step_size = _numeric_member(definition, step_attribute, "stepSize")
 
+    tolerance: float | None = None
+    tolerance_attribute = members.attributes.get("tolerance")
+    if tolerance_attribute is not None and tolerance_attribute.value is not None:
+        tolerance = _numeric_member(definition, tolerance_attribute, "tolerance")
+
     if values["stopTime"] <= values["startTime"]:
         raise ValueError(
             f"Experiment '{definition.name}' stopTime must be greater than startTime"
         )
     if step_size is not None and step_size <= 0:
         raise ValueError(f"Experiment '{definition.name}' stepSize must be positive")
+    if tolerance is not None and tolerance <= 0:
+        raise ValueError(f"Experiment '{definition.name}' tolerance must be positive")
 
     return Experiment(
         name=name,
         start_time=values["startTime"],
         stop_time=values["stopTime"],
         step_size=step_size,
+        tolerance=tolerance,
     )
 
 

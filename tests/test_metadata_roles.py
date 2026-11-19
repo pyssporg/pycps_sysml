@@ -218,6 +218,34 @@ def test_default_experiment_needs_only_start_and_stop(tmp_path: Path) -> None:
     )
 
 
+def test_tolerance_is_optional_and_must_be_positive(tmp_path: Path) -> None:
+    architecture = _load(tmp_path, fixture_text("experiment/tolerance.sysml"))
+
+    tuned = read_experiment(
+        architecture, architecture.get_part_def("tuned"), required=True
+    )
+    assert tuned == Experiment(
+        name="experiment",
+        start_time=0.0,
+        stop_time=1.0,
+        step_size=0.001,
+        tolerance=1e-6,
+    )
+
+    unset = read_experiment(
+        architecture, architecture.get_part_def("unset"), required=True
+    )
+    assert unset is not None
+    assert unset.tolerance is None
+
+    with pytest.raises(
+        ValueError, match="Experiment 'NonPositive' tolerance must be positive"
+    ):
+        read_experiment(
+            architecture, architecture.get_part_def("invalid"), required=True
+        )
+
+
 def test_experiment_is_accepted_on_an_exported_part_and_an_analysis(
     tmp_path: Path,
 ) -> None:

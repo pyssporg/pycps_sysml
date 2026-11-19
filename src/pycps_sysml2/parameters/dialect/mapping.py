@@ -9,6 +9,8 @@ from pycps_sysml2.model import (
     Attribute,
     AttributeDefinition,
     PartDefinition,
+    PortDefinition,
+    effective_members,
 )
 from pycps_sysml2.parameters.dialect.composition import (
     AppliedSet,
@@ -84,16 +86,21 @@ def _member_type_error(
 
 
 def _identity_entries(
+    architecture: Architecture,
     application: AppliedSet,
-    interface: AttributeDefinition,
+    interface: PortDefinition,
     component_name: str,
     base_index: int,
 ) -> list[tuple[str, str]]:
     """Expand a whole-object bind into identity mappings."""
-    set_members = application.set_definition.attributes
+    set_members = effective_members(
+        architecture, application.set_definition
+    ).attributes
     mapped: set[str] = set()
     entries: list[tuple[str, str]] = []
-    for member_name, target in interface.attributes.items():
+    for member_name, target in effective_members(
+        architecture, interface
+    ).attributes.items():
         source = set_members.get(member_name)
         if source is None:
             continue
@@ -152,9 +159,14 @@ def mapping_entries(
 
     component_name = application.component_name
     if application.identity:
-        return _identity_entries(application, interface, component_name, base_index)
+        return _identity_entries(
+            architecture, application, interface, component_name, base_index
+        )
 
-    set_members = application.set_definition.attributes
+    set_members = effective_members(
+        architecture, application.set_definition
+    ).attributes
+    interface_members = effective_members(architecture, interface).attributes
     entries: list[tuple[str, str]] = []
     bound_sources: set[str] = set()
     for bind in application.bindings:
@@ -177,7 +189,7 @@ def mapping_entries(
                 f"Parameter set '{application.set_definition.name}' has no member "
                 f"'{source_name}'"
             )
-        target_attribute = interface.attributes.get(target_name)
+        target_attribute = interface_members.get(target_name)
         if target_attribute is None:
             raise ValueError(
                 f"Parameter interface '{interface.name}' has no member '{target_name}'"

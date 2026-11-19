@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from pycps_sysml2.metadata.helpers import specializes_marker
+from pycps_sysml2.metadata.helpers import (
+    specializes_marker,
+    specializes_marker_deep,
+)
 from pycps_sysml2.model import (
     Architecture,
     AttributeDefinition,
@@ -22,9 +25,20 @@ PARAMETER_SET_MARKER = "ParameterSet"
 # -- role predicates --------------------------------------------------------
 
 
-def is_parameter_interface(definition: PortDefinition | None) -> bool:
-    """True when ``definition`` is a port def marked ``:> ParameterInterface``."""
-    return specializes_marker(definition, PARAMETER_INTERFACE_MARKER)
+def is_parameter_interface(
+    architecture: Architecture, definition: PortDefinition | None
+) -> bool:
+    """True when ``definition`` reaches ``ParameterInterface`` transitively.
+
+    The chain may pass through base port defs, so a derived interface that only
+    specializes ``BaseParameters :> ParameterInterface`` still counts. The
+    marker itself is included: ``is_parameter_interface(ParameterInterface)``
+    is ``True``. Unlike :func:`is_parameter_set`, matching is transitive, not
+    direct-only.
+    """
+    return specializes_marker_deep(
+        architecture, definition, PARAMETER_INTERFACE_MARKER
+    )
 
 
 def is_parameter_set(definition: AttributeDefinition | None) -> bool:

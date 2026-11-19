@@ -64,7 +64,8 @@ def _metadata_usage(
     architecture: Architecture, part_def: PartDefinition
 ) -> tuple[str, Attribute, AttributeDefinition] | None:
     found: list[tuple[str, Attribute, AttributeDefinition]] = []
-    for name, attribute in part_def.attributes.items():
+    members = effective_members(architecture, part_def)
+    for name, attribute in members.items():
         definition = architecture.resolve_attribute_def(attribute)
         if is_ssp_metadata_definition(architecture, definition):
             assert definition is not None
@@ -86,7 +87,7 @@ def _metadata_usage(
             )
         return name, attribute, definition
 
-    if SSP_METADATA_ATTR in part_def.attributes:
+    if SSP_METADATA_ATTR in members:
         raise ValueError(
             f"{part_def.name}.{SSP_METADATA_ATTR} must be typed by an "
             f"attribute def marked ':> {SSP_METADATA_MARKER}'"

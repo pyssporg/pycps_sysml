@@ -26,6 +26,7 @@ from pycps_sysml2.model import (
     ConstraintUsage,
     PartDefinition,
     PartUsage,
+    effective_members as _effective_view,
 )
 
 __all__ = [
@@ -124,30 +125,20 @@ def _effective_members(
     """Effective constraints and parts, inherited root-first by name.
 
     A configuration specializes the family and inherits its asserted
-    constraints, but the parsed definition does not merge them. A derived
-    member with the same name replaces its ancestor's and keeps the ancestor's
-    position; an unnamed constraint is never overridden.
+    constraints, but the parsed definition does not merge them. The generic
+    :func:`pycps_sysml2.model.effective.effective_members` view supplies the
+    ordered members; this function keeps the legacy keying, so a derived
+    constraint with the same name replaces its ancestor's and keeps the
+    ancestor's position, while an unnamed constraint is never overridden.
     """
     seen = frozenset() if seen is None else seen
-    key = architecture.stored_key(definition)
-    if key in seen:
+    if architecture.stored_key(definition) in seen:
         return {}, {}
-    seen = seen | {key}
+    members = _effective_view(architecture, definition)
     constraints: dict[object, ConstraintUsage] = {}
-    parts: dict[str, PartUsage] = {}
-    for supertype in definition.specializes:
-        base = architecture.resolve_part(supertype)
-        if base is None:
-            continue
-        inherited_constraints, inherited_parts = _effective_members(
-            architecture, base, seen
-        )
-        constraints.update(inherited_constraints)
-        parts.update(inherited_parts)
-    for usage in definition.constraints:
+    for usage in members.constraints:
         constraints[usage.name if usage.name is not None else id(usage)] = usage
-    parts.update(definition.parts)
-    return constraints, parts
+    return constraints, dict(members.parts)
 
 
 def _walk(

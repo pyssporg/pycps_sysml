@@ -17,10 +17,11 @@ Anything not listed here is language the IR keeps but no marker interprets.
 | `part def SspModel` | part def, empty marker | marker | `metadata/roles.py` |
 | `part def Analysis` | part def, empty marker | marker | `metadata/roles.py` |
 | `part def FmuModel` | part def, empty marker | marker | `metadata/roles.py` |
-| `attribute def DefaultExperiment` | attribute def | `startTime`, `stopTime`, `stepSize` Real | `metadata/roles.py` |
+| `attribute def SourcedMetadata` | attribute def | `source` String; shared base for artifact sources | `definitions/core.sysml` |
+| `attribute def DefaultExperiment` | attribute def | `startTime`, `stopTime`, `stepSize`, `tolerance` Real | `metadata/roles.py` |
 | `attribute def Experiment :> DefaultExperiment` | attribute def marker | `stepSize` becomes mandatory for a type specializing it | `metadata/roles.py` |
-| `attribute def SspMetadata` | attribute def | `source` String | `metadata/ssp_metadata.py` |
-| `attribute def FmuMetadata` | attribute def | `source`, `implementation` String | `metadata/fmu_metadata.py` |
+| `attribute def SspMetadata :> SourcedMetadata` | attribute def | `source` inherited | `metadata/ssp_metadata.py` |
+| `attribute def FmuMetadata :> SourcedMetadata` | attribute def | `source` inherited, `implementation` String | `metadata/fmu_metadata.py` |
 | `port def ParameterInterface` | port def, empty marker | marker | `parameters/dialect/markers.py` |
 | `attribute def ParameterSet` | attribute def, empty marker | marker | `parameters/dialect/markers.py` |
 | `pyssp_*` names | any attribute | migration error naming the typed-container replacement | `core/control.py` |
@@ -45,7 +46,11 @@ writes nothing; a caller that wants another domain constructs the policy
 nothing to emit after the first bad marker. `pycps_sysml2.validation.validate`
 calls each one in turn and collects the `ValueError` under a stable check code:
 `role-markers`, `marker-kinds`, `retired-control-attributes`,
-`parameter-dialect` (when a composition root is given), and `fmu-metadata`.
+`parameter-dialect` (when a composition root is given), `specialization`
+(cyclic specialization, incompatible redefinition, usage-kind mismatch
+collected by `analyze_semantics`), and `fmu-metadata`. An undefined supertype
+and a definition-kind mismatch are not reported, because the pinned analyzer
+emits no code for them.
 `require_fmu_metadata` is the one FMU assertion that returns its problems
 instead of raising, so a report can name every leaf component at once.
 

@@ -11,7 +11,8 @@ Two marker questions exist and they are not the same question:
 
 Keeping both here means one implementation and one place to reason about the
 namespace: a ``PartDefinition`` resolves supertypes through
-``architecture.part_definitions``, everything else through
+``architecture.part_definitions``, a ``PortDefinition`` through
+``architecture.port_definitions``, and everything else through
 ``architecture.attribute_definitions``.
 """
 
@@ -23,7 +24,9 @@ from pycps_sysml2.model import (
     AttributeDefinition,
     Definition,
     PartDefinition,
+    PortDefinition,
 )
+from pycps_sysml2.model.effective import effective_members as _effective_view
 
 
 def short_name(name: str) -> str:
@@ -45,15 +48,18 @@ def specializes_marker(definition: Definition | None, marker: str) -> bool:
 
 def specializes_marker_deep(
     architecture: Architecture,
-    definition: PartDefinition | AttributeDefinition | None,
+    definition: PartDefinition | PortDefinition | AttributeDefinition | None,
     marker: str,
     *,
     seen: set[str] | None = None,
 ) -> bool:
     """True when ``definition`` is ``marker`` or specializes it transitively.
 
-    Unlike :func:`specializes_marker` this matches the definition's own short
-    name, so ``is_ssp_model(SspModel_marker_definition)`` stays ``True``.
+    Accepts a ``PartDefinition``, a ``PortDefinition``, or an
+    ``AttributeDefinition``; each resolves its supertypes through its own
+    namespace. Unlike :func:`specializes_marker` this matches the definition's
+    own short name, so ``is_ssp_model(SspModel_marker_definition)`` stays
+    ``True``.
 
     The visited set holds stored keys, not bare names: two packages may define
     the same bare name, and a bare-name guard would prune the second definition
@@ -73,6 +79,8 @@ def specializes_marker_deep(
             return True
         if isinstance(definition, PartDefinition):
             base = architecture.resolve_part(supertype)
+        elif isinstance(definition, PortDefinition):
+            base = architecture.resolve_port(supertype)
         else:
             base = architecture.resolve_attribute_def(supertype)
         if specializes_marker_deep(architecture, base, marker, seen=seen):
@@ -89,28 +97,11 @@ def effective_members(
     """Direct members plus inherited members; inherited values win by name.
 
     A derived member with no value of its own keeps the inherited value instead
-    of shadowing it with ``None``. The visited set holds stored keys so a
-    same-named definition of another package is not mistaken for a cycle.
+    of shadowing it with ``None``. This is the attribute half of the generic
+    :func:`pycps_sysml2.model.effective.effective_members` view, kept here with
+    its historical signature for the metadata dialects.
     """
     seen = set() if seen is None else seen
-    key = architecture.stored_key(definition)
-    if key in seen:
+    if architecture.stored_key(definition) in seen:
         return {}
-    seen.add(key)
-
-    members: dict[str, Attribute] = {}
-    for supertype in definition.specializes:
-        base = architecture.resolve_attribute_def(supertype)
-        if base is not None:
-            members.update(effective_members(architecture, base, seen=seen))
-    for name, attribute in definition.attributes.items():
-        inherited = members.get(name)
-        if (
-            attribute.value is None
-            and inherited is not None
-            and inherited.value is not None
-        ):
-            members[name] = inherited
-        else:
-            members[name] = attribute
-    return members
+    return dict(_effective_view(architecture, definition).attributes)

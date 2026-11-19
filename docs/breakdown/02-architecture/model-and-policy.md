@@ -20,8 +20,11 @@ their validators into one report.
 
 **The IR.** `Architecture` is a merged, insertion-ordered dataclass tree
 (definitions, usages, attributes, ports, connections, bindings, constraints,
-variation facts). It is repo-owned: no sysmlpy object crosses the parser
-boundary, and loading is non-validating.
+variation facts, `semantic_issues`); no sysmlpy object crosses the parser boundary,
+and loading is non-validating unless `analyze_semantics=True` asks for diagnostics.
+
+**Inheritance.** A definition stores only the members it declares; inherited
+members are resolved on demand by `model/effective.py`, never at load (INFO-004).
 
 **Package namespace.** Packages are first-class in storage only: a definition of
 the architecture's own package (or a synthesized one) is keyed by its bare
@@ -48,10 +51,9 @@ retired-attribute and flat-connector rejections. `core/control.py` holds the
 single `RETIRED_ATTRIBUTES` map and residual `pyssp_*` catch-all: history, not
 a third policy object.
 
-**Defaults.** Marker names stay exported (`SSP_MODEL_MARKER`,
-`ANALYSIS_MARKER`, `FMU_MODEL_MARKER`, `PARAMETER_INTERFACE_MARKER`,
-`PARAMETER_SET_MARKER`); `SSP_ROLES`/`SSP_POLICY` are the default instances.
-There is no `GENERIC_POLICY`: a non-SSP domain constructs its policy explicitly.
+**Defaults.** Marker names stay exported (`SSP_MODEL_MARKER`, `ANALYSIS_MARKER`,
+`FMU_MODEL_MARKER`, `PARAMETER_INTERFACE_MARKER`, `PARAMETER_SET_MARKER`);
+`SSP_ROLES`/`SSP_POLICY` are the defaults, and no `GENERIC_POLICY` exists.
 
 **Injection.** Public entry points in `parameters/` and `parameters/dialect/`
 take the policy keyword-only and required; private helpers take it positionally

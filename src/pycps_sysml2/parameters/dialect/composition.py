@@ -18,6 +18,7 @@ from pycps_sysml2.model import (
     Binding,
     PartDefinition,
     PartUsage,
+    effective_members,
 )
 from pycps_sysml2.parameters.dialect.declarations import parameter_port
 from pycps_sysml2.parameters.dialect.markers import (
@@ -172,7 +173,7 @@ def component_refs(
         prefix: tuple[str, ...],
         ancestors: frozenset[str],
     ) -> None:
-        for usage in part_def.parts.values():
+        for usage in effective_members(architecture, part_def).parts.values():
             path = prefix + (usage.name,)
             child = architecture.resolve_part(usage)
             if child is None:
@@ -182,7 +183,7 @@ def component_refs(
             refs.append(
                 ComponentRef(path=path, part_usage=usage, part_def=child)
             )
-            if child.parts:
+            if effective_members(architecture, child).parts:
                 key = architecture.stored_key(child)
                 if key in ancestors:
                     raise ValueError(
@@ -299,7 +300,7 @@ def set_usages(
 ) -> dict[str, Attribute]:
     """Composition attributes whose type is marked ``ParameterSet``."""
     usages: dict[str, Attribute] = {}
-    for name, attribute in system.attributes.items():
+    for name, attribute in effective_members(architecture, system).attributes.items():
         if (
             classify_attribute(architecture, attribute, policy=policy)
             is AttributeKind.PARAMETER_SET
@@ -314,7 +315,7 @@ def _resolve_set_definition(
     usage_name: str,
     component_name: str,
 ) -> AttributeDefinition:
-    usage = system.attributes.get(usage_name)
+    usage = effective_members(architecture, system).attributes.get(usage_name)
     if usage is None:
         raise ValueError(
             f"Binding for {component_name} references '{usage_name}', "
@@ -430,7 +431,8 @@ def _reject_flat_attributes(
     part_def: PartDefinition,
     policy: DialectPolicy,
 ) -> None:
-    for name, attribute in part_def.attributes.items():
+    members = effective_members(architecture, part_def)
+    for name, attribute in members.attributes.items():
         kind = classify_attribute(architecture, attribute, policy=policy)
         if (
             policy.fmu_metadata_attr is not None
@@ -448,7 +450,7 @@ def _reject_flat_attributes(
             )
         match kind:
             case AttributeKind.FMU_METADATA:
-                if part_def.parts:
+                if members.parts:
                     raise ValueError(
                         f"{part_def.name}.{name} is FMU metadata, but the part has "
                         "subparts; a nested system cannot also be an FMU component"
@@ -486,7 +488,8 @@ def validate_parameter_dialect(
     for part_def in component_definitions(architecture, system):
         _reject_flat_attributes(architecture, part_def, policy)
 
-    for name, attribute in system.attributes.items():
+    system_members = effective_members(architecture, system)
+    for name, attribute in system_members.attributes.items():
         match classify_attribute(architecture, attribute, policy=policy):
             case AttributeKind.FMU_METADATA:
                 if not policy.roles.is_fmu_model(architecture, system):
@@ -494,7 +497,7 @@ def validate_parameter_dialect(
                         f"{system.name}.{name} is FMU metadata, but the composition "
                         "is not an FMU component"
                     )
-                if system.parts:
+                if system_members.parts:
                     raise ValueError(
                         f"{system.name}.{name} is FMU metadata, but the part has "
                         "subparts; a nested system cannot also be an FMU component"

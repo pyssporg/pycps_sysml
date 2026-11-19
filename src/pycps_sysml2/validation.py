@@ -136,6 +136,18 @@ def validate(
         "retired-control-attributes",
         lambda: validate_retired_attributes(architecture),
     )
+
+    def check_specialization() -> None:
+        for issue in architecture.semantic_issues:
+            issues.append(
+                ValidationIssue(
+                    code="specialization",
+                    message=issue.message,
+                    subject=issue.subject,
+                )
+            )
+
+    run("specialization", check_specialization)
     if system is not None:
         run(
             "parameter-dialect",

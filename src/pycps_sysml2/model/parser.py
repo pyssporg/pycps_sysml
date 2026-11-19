@@ -30,9 +30,10 @@ sysmlpy quirks compensated here (verified in the migration notes,
 - unnamed ``connect`` statements get a UUID as their name, so the legacy
   ``"{src}.{src_port}_to_{dst}.{dst_port}"`` name is rebuilt for them.
 
-Loading stays non-validating: ``resolve_types()``/``analyze()`` are never
-called, so unresolved references simply surface as ``resolve_part``/
-``resolve_port`` returning ``None`` in consumers.
+Loading stays non-validating by default: ``resolve_types()`` is never called
+and ``analyze()`` runs only when a caller opts in through
+:func:`analyze_semantics`, so unresolved references simply surface as
+``resolve_part``/``resolve_port`` returning ``None`` in consumers.
 """
 
 from __future__ import annotations
@@ -104,6 +105,19 @@ def parse_packages(path: Path | str) -> list:
 def parse_tree(source: str):
     """Raw ANTLR parse tree of one source text (a sysmlpy internal)."""
     return sysmlpy.antlr_parser.parse(source)
+
+
+def analyze_semantics(model) -> tuple:
+    """Run sysmlpy's semantic analysis over an already-parsed model.
+
+    This is the single ``analyze()`` call site. ``style_checks`` is off so
+    naming and file/package warnings never reach the repo report, and the call
+    mutates nothing: sysmlpy builds its own symbol table from the grammar, so
+    ``resolve_types()`` is not a prerequisite. The caller maps the returned
+    issues to repo-owned :class:`~pycps_sysml2.model.model.SemanticIssue`
+    values in :mod:`pycps_sysml2.model.semantics`.
+    """
+    return tuple(sysmlpy.analyze(model, style_checks=False))
 
 
 # -- import declarations (visibility data, not resolution) -----------------

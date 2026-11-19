@@ -13,7 +13,12 @@ import pytest
 
 from pycps_sysml2 import core_definitions, load
 from pycps_sysml2.definitions import CORE_FILE
-from pycps_sysml2.metadata import fmu_metadata, validate_role_markers
+from pycps_sysml2.metadata import (
+    EXPERIMENT_FIELDS,
+    fmu_metadata,
+    validate_role_markers,
+)
+from pycps_sysml2.model import effective_members
 from pycps_sysml2.parameters import validate_marker_definitions
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
@@ -30,6 +35,7 @@ CORE_KEYS = {
         "FmuModel",
         "ParameterInterface",
         "ParameterSet",
+        "SourcedMetadata",
         "FmuMetadata",
         "SspMetadata",
         "DefaultExperiment",
@@ -104,12 +110,29 @@ def test_core_definitions_parses_as_the_core_package() -> None:
     assert list(architecture.port_definitions) == ["ParameterInterface"]
     assert list(architecture.attribute_definitions) == [
         "ParameterSet",
+        "SourcedMetadata",
         "FmuMetadata",
         "SspMetadata",
         "DefaultExperiment",
         "Experiment",
     ]
     assert architecture.included_definitions == set()
+
+
+def test_metadata_and_experiment_inherit_from_their_core_bases() -> None:
+    architecture = load(core_definitions())
+
+    for name in ("FmuMetadata", "SspMetadata"):
+        members = effective_members(
+            architecture, architecture.get_attribute_def(name)
+        )
+        assert members.attributes["source"].type_name == "String"
+
+    experiment = effective_members(
+        architecture, architecture.get_attribute_def("Experiment")
+    )
+    assert set(experiment.attributes) == set(EXPERIMENT_FIELDS)
+    assert "tolerance" in experiment.attributes
 
 
 def test_load_without_includes_leaves_markers_unresolved(tmp_path) -> None:
@@ -264,6 +287,7 @@ def test_export_declared_omits_included_definitions(tmp_path) -> None:
     assert "part def FmuModel;" not in text
     assert "port def ParameterInterface;" not in text
     assert "attribute def ParameterSet;" not in text
+    assert "attribute def SourcedMetadata {" not in text
     assert "attribute def FmuMetadata {" not in text
     assert "attribute def SspMetadata {" not in text
     assert "part def System :> SspModel" in text

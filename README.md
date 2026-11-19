@@ -138,8 +138,8 @@ also an error and names both roots. Merged names are recorded in
 
 `core_definitions()` returns the packaged `definitions/core.sysml`
 (`package PysspCore`): `SspModel`, `Analysis`, `FmuModel`,
-`ParameterInterface`, `ParameterSet`, `FmuMetadata`, `SspMetadata`,
-`DefaultExperiment`, and `Experiment`. It is one
+`ParameterInterface`, `ParameterSet`, `SourcedMetadata`, `FmuMetadata`,
+`SspMetadata`, `DefaultExperiment`, and `Experiment`. It is one
 possible include, not a special case. The wheel carries the file as package
 data.
 

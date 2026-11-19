@@ -80,6 +80,8 @@ def variation_facts(source: str) -> VariationFacts:
                 if _has_variation_prefix(node):
                     _capture_usage_point(node, facts)
                 _capture_usage_extras(node, facts)
+            elif kind == "PortUsageContext":
+                _capture_usage_extras(node, facts)
             elif (
                 kind == "AttributeDefinitionContext"
                 and _has_attribute_variation_prefix(node)
@@ -182,6 +184,20 @@ def _enclosing_part_definition(ctx):
     return None
 
 
+def _enclosing_definition(ctx):
+    """The nearest part, port, or attribute definition above *ctx*, or ``None``."""
+    parent = getattr(ctx, "parentCtx", None)
+    while parent is not None:
+        if type(parent).__name__ in {
+            "PartDefinitionContext",
+            "PortDefinitionContext",
+            "AttributeDefinitionContext",
+        }:
+            return parent
+        parent = getattr(parent, "parentCtx", None)
+    return None
+
+
 def _capture_usage_point(node, facts: VariationFacts) -> None:
     """Record one ``variation part`` usage of its enclosing definition."""
     owner = _owning_part_definition(node)
@@ -237,7 +253,7 @@ def _owning_attribute_definition(node):
 
 
 def _definition_name(ctx) -> str | None:
-    """Declared name of a raw ``PartDefinitionContext`` or ``AttributeDefinitionContext``."""
+    """Declared name of a raw part, port, or attribute definition context."""
     definition = ctx.definition()
     declaration = definition.definitionDeclaration() if definition is not None else None
     identification = declaration.identification() if declaration is not None else None
@@ -377,16 +393,17 @@ def _variant_body(usage) -> VariantBody | None:
 
 
 def _capture_usage_extras(node, facts: VariationFacts) -> None:
-    """Record one part or attribute usage's extras under its owning definition.
+    """Record one part, port, or attribute usage's extras under its definition.
 
-    The key is ``(owning part definition, usage display name)``. A variant
-    member is already carried by its variant body and is skipped; a usage whose
-    name can be neither identified nor taken from a single redefinition target
-    is skipped rather than guessed.
+    The key is ``(owning definition, usage display name)``, where the owner is a
+    part, port, or attribute definition. A variant member is already carried by
+    its variant body and is skipped; a usage whose name can be neither
+    identified nor taken from a single redefinition target is skipped rather
+    than guessed.
     """
     if _inside_variant_body(node):
         return
-    definition = _enclosing_part_definition(node)
+    definition = _enclosing_definition(node)
     owner = _definition_name(definition) if definition is not None else None
     name = _usage_display_name(node)
     if owner is None or name is None:
@@ -540,6 +557,7 @@ def _usage_body(ctx) -> VariantBody | None:
                 type_name=_usage_type(attribute),
                 value=extras.value,
                 redefines=extras.redefines,
+                subsets=extras.subsets,
             )
             continue
         if _has_content(item):

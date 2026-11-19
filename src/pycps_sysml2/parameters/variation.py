@@ -65,6 +65,7 @@ from pycps_sysml2.model import (
     PortUsage,
     VariantBody,
     VariantMember,
+    effective_members,
 )
 
 __all__ = [
@@ -775,12 +776,16 @@ def _is_parameter_endpoint(
         part = body.parts.get(part_name)
         definition = architecture.resolve_part(part) if part is not None else None
         port_usage = (
-            definition.ports.get(port_name) if definition is not None else None
+            effective_members(architecture, definition).ports.get(port_name)
+            if definition is not None
+            else None
         )
     if port_usage is None:
         return False
     port_definition = architecture.resolve_port(port_usage)
-    return port_definition is not None and is_parameter_interface(port_definition)
+    return port_definition is not None and is_parameter_interface(
+        architecture, port_definition
+    )
 
 
 def require_resolved_attribute_variation(

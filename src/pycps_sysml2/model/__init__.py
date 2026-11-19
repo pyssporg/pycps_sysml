@@ -9,6 +9,7 @@ Anti-corruption layer over the external `sysmlpy` parser:
   ``sysmlpy`` drops from its wrapper objects.
 - ``loader.py``   — walks a file or directory, merges the packages, and
   builds the repo-owned model.
+- ``effective.py``— the inherited member view; the IR stays source-faithful.
 - ``attribution.py`` — the per-file scan that ties each merged definition
   back to the file that declared it.
 - ``exporter.py`` — emits conformant SysML v2 text from the repo-owned model
@@ -20,6 +21,7 @@ If sysmlpy's API changes, only ``parser.py`` needs fixes.
 from collections.abc import Sequence
 from pathlib import Path
 
+from pycps_sysml2.model.effective import EffectiveMembers, effective_members
 from pycps_sysml2.model.model import (
     Architecture,
     Attribute,
@@ -35,6 +37,7 @@ from pycps_sysml2.model.model import (
     PortDefinition,
     PortUsage,
     RequirementDefinition,
+    SemanticIssue,
     VariantBody,
     VariantMember,
     endpoint_text,
@@ -50,13 +53,16 @@ __all__ = [
     "ConstraintParameter",
     "ConstraintUsage",
     "Definition",
+    "EffectiveMembers",
     "PartDefinition",
     "PartUsage",
     "PortDefinition",
     "PortUsage",
     "RequirementDefinition",
+    "SemanticIssue",
     "VariantBody",
     "VariantMember",
+    "effective_members",
     "endpoint_text",
     "load",
 ]
@@ -65,14 +71,16 @@ __all__ = [
 def load(
     path: Path | str | Sequence[Path | str],
     *includes: Path | str,
+    analyze_semantics: bool = False,
 ) -> Architecture:
     """Load a primary architecture root plus any number of included roots.
 
     ``path`` is one root or a sequence whose first element is the primary model
-    root; further elements and ``*includes`` are included roots. See
+    root; further elements and ``*includes`` are included roots.
+    ``analyze_semantics=True`` opts into specialization diagnostics. See
     :func:`pycps_sysml2.model.loader.load`. Implemented in
     :mod:`pycps_sysml2.model.loader`.
     """
     from pycps_sysml2.model.loader import load as _load
 
-    return _load(path, *includes)
+    return _load(path, *includes, analyze_semantics=analyze_semantics)

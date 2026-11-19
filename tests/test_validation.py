@@ -22,6 +22,7 @@ CHECKS = (
     "role-markers",
     "marker-kinds",
     "retired-control-attributes",
+    "specialization",
     "parameter-dialect",
     "fmu-metadata",
 )

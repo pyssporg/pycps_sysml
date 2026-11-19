@@ -72,6 +72,7 @@ from pycps_sysml2.model.parser import (
     port_direction,
     specializes,
 )
+from pycps_sysml2.model.semantics import specialization_issues
 from pycps_sysml2.model.source import connection_endpoint, parse_constraint_body
 from pycps_sysml2.model.variation import VariationFacts
 
@@ -90,6 +91,7 @@ _DEFINITION_ATTRIBUTES = (
 def load(
     path: Path | str | Sequence[Path | str],
     *includes: Path | str,
+    analyze_semantics: bool = False,
 ) -> Architecture:
     """Load one primary architecture root plus any number of included roots.
 
@@ -99,6 +101,11 @@ def load(
     loads exactly that file; a directory loads its ``*.sysml`` files
     non-recursively in sorted name order. The primary model's files must
     declare the same package name.
+
+    ``analyze_semantics=True`` opts into sysmlpy's semantic analysis and
+    attaches its specialization/redefinition diagnostics to
+    :attr:`Architecture.semantic_issues`; the default keeps loading
+    non-validating and never calls ``analyze()``.
 
     Every file is parsed in one ``sysmlpy.load_files`` call, so files that
     declare the same package are merged by sysmlpy. A second per-file pass
@@ -138,6 +145,8 @@ def load(
         imports=collect_imports(scanned),
     )
     _merge_model(architecture, model, attribution(model, scanned))
+    if analyze_semantics:
+        architecture.semantic_issues = specialization_issues(model)
     return architecture
 
 
@@ -188,7 +197,7 @@ def _merge_model(architecture: Architecture, model, attribution) -> None:
             _add_definition(
                 architecture,
                 architecture.add_port_def,
-                _port_definition(element, parsed.file),
+                _port_definition(element, parsed.file, parsed.variation),
                 parsed,
                 state,
                 package_name,
@@ -345,19 +354,24 @@ def _part_definition(element, file: Path, variation: VariationFacts) -> PartDefi
         name = unquote_name(getattr(attribute, "display_name", None) or attribute.name)
         extras = variation.usage_extras.get((definition_name, name))
         part_def.attributes[name] = _attribute(
-            attribute, extras.redefines if extras is not None else ()
+            attribute,
+            extras.redefines if extras is not None else (),
+            extras.subsets if extras is not None else (),
         )
     for port in element.ports:
         # A redefining port (``out port :>> y : T;``) gets a UUID as its parsed
         # name; ``display_name`` keeps the name the composition connects to.
         name = unquote_name(getattr(port, "display_name", None) or port.name)
         type_name, conjugated = _conjugated_type_name(port.typed_by_name)
+        extras = variation.usage_extras.get((definition_name, name))
         part_def.ports[name] = PortUsage(
             name=name,
             direction=port_direction(port),
             type_name=type_name,
             multiplicity=multiplicity(port),
             conjugated=conjugated,
+            redefines=extras.redefines if extras is not None else (),
+            subsets=extras.subsets if extras is not None else (),
         )
     for part in element.parts:
         # A redefining part usage (``part :>> source = ...;``) gets a UUID as
@@ -418,7 +432,9 @@ def _attach_constraints(
             )
 
 
-def _port_definition(element, file: Path) -> PortDefinition:
+def _port_definition(
+    element, file: Path, variation: VariationFacts
+) -> PortDefinition:
     """Repo PortDefinition from a sysmlpy port definition.
 
     ``item`` members are not part of the port contract yet: they are reported
@@ -430,15 +446,21 @@ def _port_definition(element, file: Path) -> PortDefinition:
             f"unsupported item member(s) {names} in port definition "
             f"'{unquote_name(element.name)}' ({file})"
         )
+    definition_name = unquote_name(element.name)
     port_def = PortDefinition(
-        name=unquote_name(element.name),
+        name=definition_name,
         doc=element.doc,
         source_file=file.name,
         specializes=specializes(element),
     )
     for attribute in element.attributes:
         name = unquote_name(attribute.name)
-        port_def.attributes[name] = _attribute(attribute)
+        extras = variation.usage_extras.get((definition_name, name))
+        port_def.attributes[name] = _attribute(
+            attribute,
+            extras.redefines if extras is not None else (),
+            extras.subsets if extras is not None else (),
+        )
     return port_def
 
 
@@ -456,7 +478,13 @@ def _attribute_definition(
         variants=list(variation.attribute_variants.get(definition_name, ())),
     )
     for attribute in element.attributes:
-        attribute_def.attributes[unquote_name(attribute.name)] = _attribute(attribute)
+        name = unquote_name(attribute.name)
+        extras = variation.usage_extras.get((definition_name, name))
+        attribute_def.attributes[name] = _attribute(
+            attribute,
+            extras.redefines if extras is not None else (),
+            extras.subsets if extras is not None else (),
+        )
     return attribute_def
 
 
@@ -548,7 +576,11 @@ def _binding(bind, file: Path) -> Binding:
 # -- attribute usages -------------------------------------------------------
 
 
-def _attribute(element, redefines: tuple[str, ...] = ()) -> Attribute:
+def _attribute(
+    element,
+    redefines: tuple[str, ...] = (),
+    subsets: tuple[str, ...] = (),
+) -> Attribute:
     """Repo Attribute from a sysmlpy attribute usage."""
     return Attribute(
         name=unquote_name(getattr(element, "display_name", None) or element.name),
@@ -557,4 +589,5 @@ def _attribute(element, redefines: tuple[str, ...] = ()) -> Attribute:
         multiplicity=multiplicity(element),
         redefines=redefines,
         direction=port_direction(element),
+        subsets=subsets,
     )

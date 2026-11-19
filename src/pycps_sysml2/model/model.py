@@ -38,6 +38,7 @@ __all__ = [
     "PortDefinition",
     "PortUsage",
     "RequirementDefinition",
+    "SemanticIssue",
     "VariantBody",
     "VariantMember",
     "endpoint_text",
@@ -97,6 +98,7 @@ class Attribute:
     multiplicity: str | None = None
     redefines: tuple[str, ...] = ()
     direction: str | None = None
+    subsets: tuple[str, ...] = ()
 
     @property
     def is_list(self) -> bool:
@@ -156,6 +158,8 @@ class PortUsage:
     doc: str | None = None
     multiplicity: str | None = None
     conjugated: bool = False
+    redefines: tuple[str, ...] = ()
+    subsets: tuple[str, ...] = ()
 
     def effective_member_direction(self, attribute: Attribute) -> str | None:
         """The direction a definition member takes on this usage.
@@ -417,6 +421,20 @@ class RequirementDefinition(Definition):
     text: str | None = None
 
 
+@dataclass(frozen=True)
+class SemanticIssue:
+    """One opt-in semantic finding about the architecture.
+
+    ``code`` is the repo-owned stable string; ``message`` keeps the analyzer's
+    text, which names the offending element; ``subject`` is the best-effort
+    element name or reference the issue is about.
+    """
+
+    code: str
+    message: str
+    subject: str | None = None
+
+
 @dataclass
 class Architecture:
     """A merged SysML v2 architecture spanning one or more packages.
@@ -440,6 +458,10 @@ class Architecture:
     architecture-wide, not per importing file — every collected import applies
     to the whole merged architecture. That is a deliberate simplification until
     SysML scopes are modelled.
+
+    ``semantic_issues`` stays empty unless the caller opted into analysis with
+    ``load(..., analyze_semantics=True)``; see
+    :func:`pycps_sysml2.model.loader.load`.
     """
 
     package_name: str
@@ -454,6 +476,7 @@ class Architecture:
     )
     included_definitions: set[str] = field(default_factory=set)
     imports: dict[str, frozenset[str] | None] = field(default_factory=dict)
+    semantic_issues: tuple[SemanticIssue, ...] = ()
 
     # -- namespace ---------------------------------------------------------
 
@@ -637,7 +660,20 @@ class Architecture:
         return definition if isinstance(definition, AttributeDefinition) else None
 
     def iter_part_usages(self, part_def: PartDefinition) -> Iterator[PartUsage]:
+        """The part usages *part_def* declares, without inherited ones.
+
+        The IR stays source-faithful; use :meth:`iter_effective_part_usages`
+        when the walk needs the whole member set.
+        """
         return iter(part_def.parts.values())
+
+    def iter_effective_part_usages(
+        self, part_def: PartDefinition
+    ) -> Iterator[PartUsage]:
+        """Every part usage *part_def* exposes, inherited members included."""
+        from pycps_sysml2.model.effective import effective_members
+
+        return iter(effective_members(self, part_def).parts.values())
 
     # -- export --------------------------------------------------------------
 

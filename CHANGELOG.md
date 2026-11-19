@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `SourcedMetadata` as the shared core base for containers that name an
+  external artifact; `FmuMetadata` and `SspMetadata` inherit `source` from it.
+- The optional FMI 2.0 `DefaultExperiment.tolerance`; `read_experiment` reads it
+  from the effective-member view and rejects a non-positive value.
+
+### Changed
+
+- `EXPERIMENT_FIELDS` and `Experiment` carry `tolerance`, `None` when not
+  authored; no default value is assumed.
+
 ## [0.3.0] - 2026-11-19
 
 ### Removed

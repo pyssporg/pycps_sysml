@@ -10,6 +10,7 @@ from pycps_sysml2.model import (
     PartDefinition,
     PortDefinition,
     PortUsage,
+    effective_members,
 )
 from pycps_sysml2.parameters.dialect.markers import (
     PARAMETER_INTERFACE_MARKER,
@@ -29,13 +30,14 @@ def parameter_port(
     An attribute bag is the retired carrier and is rejected with a migration
     hint, so the two carriers never coexist silently.
     """
-    if PARAMETERS_PORT_NAME in part_def.attributes:
+    members = effective_members(architecture, part_def)
+    if PARAMETERS_PORT_NAME in members.attributes:
         raise ValueError(
             f"{part_def.name}.{PARAMETERS_PORT_NAME} is an attribute bag; "
             "parameter interfaces are port defs. Use "
             f"'in port {PARAMETERS_PORT_NAME} : <PortDef>;' instead."
         )
-    port_usage = part_def.ports.get(PARAMETERS_PORT_NAME)
+    port_usage = members.ports.get(PARAMETERS_PORT_NAME)
     if port_usage is None:
         return None
     if architecture.resolve_port(port_usage) is None:
@@ -62,7 +64,7 @@ def parameter_interface(
         return None
     definition = architecture.resolve_port(port_usage)
     assert definition is not None  # parameter_port already resolved it
-    if not is_parameter_interface(definition):
+    if not is_parameter_interface(architecture, definition):
         raise ValueError(
             f"Parameter port {part_def.name}.{PARAMETERS_PORT_NAME} is typed by "
             f"'{definition.name}', which is not marked ':> {PARAMETER_INTERFACE_MARKER}'"
@@ -72,13 +74,15 @@ def parameter_interface(
             f"Parameter port {part_def.name}.{PARAMETERS_PORT_NAME} must be "
             f"undirected or 'in', got '{port_usage.direction}'"
         )
-    require_undirected_members(definition)
+    require_undirected_members(architecture, definition)
     return definition
 
 
-def require_undirected_members(interface: PortDefinition) -> None:
+def require_undirected_members(
+    architecture: Architecture, interface: PortDefinition
+) -> None:
     """Reject directed members: parameter interfaces stay directionless."""
-    for name, member in interface.attributes.items():
+    for name, member in effective_members(architecture, interface).attributes.items():
         if member.direction is not None:
             raise ValueError(
                 f"Parameter interface '{interface.name}' members must be "
@@ -98,7 +102,7 @@ def parameter_declarations(
     interface = parameter_interface(architecture, part_def)
     if interface is None:
         return []
-    return list(interface.attributes.values())
+    return list(effective_members(architecture, interface).attributes.values())
 
 
 # -- parameter items --------------------------------------------------------

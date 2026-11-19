@@ -35,7 +35,6 @@ from dataclasses import dataclass
 
 from pycps_sysml2.core.fmi_helpers import fmu_resource_path
 from pycps_sysml2.metadata.helpers import (
-    effective_members,
     short_name,
     specializes_marker_deep,
 )
@@ -44,6 +43,7 @@ from pycps_sysml2.model import (
     Attribute,
     AttributeDefinition,
     PartDefinition,
+    effective_members,
 )
 
 FMU_METADATA_ATTR = "fmu_meta"
@@ -73,7 +73,8 @@ def _metadata_usage(
     architecture: Architecture, part_def: PartDefinition
 ) -> tuple[str, Attribute, AttributeDefinition] | None:
     found: list[tuple[str, Attribute, AttributeDefinition]] = []
-    for name, attribute in part_def.attributes.items():
+    members = effective_members(architecture, part_def)
+    for name, attribute in members.attributes.items():
         definition = architecture.resolve_attribute_def(attribute)
         if is_fmu_metadata_definition(architecture, definition):
             assert definition is not None
@@ -95,7 +96,7 @@ def _metadata_usage(
             )
         return name, attribute, definition
 
-    if FMU_METADATA_ATTR in part_def.attributes:
+    if FMU_METADATA_ATTR in members.attributes:
         raise ValueError(
             f"{part_def.name}.{FMU_METADATA_ATTR} must be typed by an "
             f"attribute def marked ':> {FMU_METADATA_MARKER}'"
@@ -124,7 +125,7 @@ def fmu_metadata(
         return None
 
     name, _attribute, definition = usage
-    if part_def.parts:
+    if effective_members(architecture, part_def).parts:
         raise ValueError(
             f"{part_def.name} has both subparts and '{name}' metadata; "
             "a nested system cannot also be an FMU component"
@@ -138,7 +139,7 @@ def fmu_metadata(
         )
 
     members = effective_members(architecture, definition)
-    unknown = sorted(set(members) - set(FMU_METADATA_FIELDS))
+    unknown = sorted(set(members.attributes) - set(FMU_METADATA_FIELDS))
     if unknown:
         raise ValueError(
             f"FMU metadata definition '{definition.name}' declares unsupported "
@@ -147,9 +148,9 @@ def fmu_metadata(
         )
 
     return FmuMetadata(
-        source=_string_member("source", members.get("source")),
+        source=_string_member("source", members.attributes.get("source")),
         implementation=_string_member(
-            "implementation", members.get("implementation")
+            "implementation", members.attributes.get("implementation")
         ),
     )
 
@@ -349,7 +350,7 @@ def require_fmu_metadata(
     """
     problems: list[str] = []
     for part_def in part_defs:
-        if part_def.parts:
+        if effective_members(architecture, part_def).parts:
             continue
         try:
             metadata = fmu_metadata(architecture, part_def)
