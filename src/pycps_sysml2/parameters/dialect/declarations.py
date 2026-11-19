@@ -72,7 +72,18 @@ def parameter_interface(
             f"Parameter port {part_def.name}.{PARAMETERS_PORT_NAME} must be "
             f"undirected or 'in', got '{port_usage.direction}'"
         )
+    require_undirected_members(definition)
     return definition
+
+
+def require_undirected_members(interface: PortDefinition) -> None:
+    """Reject directed members: parameter interfaces stay directionless."""
+    for name, member in interface.attributes.items():
+        if member.direction is not None:
+            raise ValueError(
+                f"Parameter interface '{interface.name}' members must be "
+                f"undirected, got '{member.direction}' on '{name}'"
+            )
 
 
 def parameter_declarations(

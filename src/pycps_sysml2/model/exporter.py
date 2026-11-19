@@ -111,6 +111,7 @@ def _attribute_lines(attribute: Attribute, indent: str = _MEMBER_INDENT) -> list
     lines = _doc_line(attribute.doc, indent)
     type_name = attribute.effective_type_name
     multiplicity = _multiplicity_suffix(attribute)
+    direction = f"{attribute.direction} " if attribute.direction else ""
     if attribute.redefines:
         # A redefinition keeps the inherited feature name (``:>> scenario``) and
         # its value is a feature-value expression, not necessarily a literal.
@@ -124,25 +125,30 @@ def _attribute_lines(attribute: Attribute, indent: str = _MEMBER_INDENT) -> list
     elif attribute.value is not None:
         value = _format_value(attribute.value)
         lines.append(
-            f"{indent}attribute {quote_name(attribute.name)}"
+            f"{indent}{direction}attribute {quote_name(attribute.name)}"
             f" : {type_name}{multiplicity} = {value};"
         )
     elif type_name:
         lines.append(
-            f"{indent}attribute {quote_name(attribute.name)}"
+            f"{indent}{direction}attribute {quote_name(attribute.name)}"
             f" : {type_name}{multiplicity};"
         )
     else:
-        lines.append(f"{indent}attribute {quote_name(attribute.name)}{multiplicity};")
+        lines.append(
+            f"{indent}{direction}attribute {quote_name(attribute.name)}{multiplicity};"
+        )
     return lines
 
 
 def _port_usage_lines(port: PortUsage, indent: str = _MEMBER_INDENT) -> list[str]:
     direction = f"{port.direction} " if port.direction else ""
     multiplicity = f"[{port.multiplicity}]" if port.multiplicity else ""
+    type_name = _qualified_name(port.type_name)
+    if port.conjugated:
+        type_name = f"~{type_name}"
     return _doc_line(port.doc, indent) + [
         f"{indent}{direction}port {quote_name(port.name)}"
-        f" : {port.type_name}{multiplicity};"
+        f" : {type_name}{multiplicity};"
     ]
 
 

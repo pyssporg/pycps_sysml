@@ -305,6 +305,19 @@ def _reject_included_duplicate(
 # -- definition builders ----------------------------------------------------
 
 
+def _conjugated_type_name(type_name: str) -> tuple[str, bool]:
+    """Base type name and conjugation flag of a port usage's declared type.
+
+    ``~Signal`` and ``~'Sig-nal'`` both mean ``Signal::'~Signal'``: the tilde is
+    stripped so the usage resolves to the base definition, and the quoted name
+    is unquoted like any other declared name.
+    """
+    conjugated = type_name.startswith("~")
+    if conjugated:
+        type_name = type_name[1:]
+    return unquote_name(type_name), conjugated
+
+
 def _part_definition(element, file: Path, variation: VariationFacts) -> PartDefinition:
     """Repo PartDefinition from a sysmlpy part definition.
 
@@ -338,11 +351,13 @@ def _part_definition(element, file: Path, variation: VariationFacts) -> PartDefi
         # A redefining port (``out port :>> y : T;``) gets a UUID as its parsed
         # name; ``display_name`` keeps the name the composition connects to.
         name = unquote_name(getattr(port, "display_name", None) or port.name)
+        type_name, conjugated = _conjugated_type_name(port.typed_by_name)
         part_def.ports[name] = PortUsage(
             name=name,
             direction=port_direction(port),
-            type_name=port.typed_by_name,
+            type_name=type_name,
             multiplicity=multiplicity(port),
+            conjugated=conjugated,
         )
     for part in element.parts:
         # A redefining part usage (``part :>> source = ...;``) gets a UUID as
@@ -404,7 +419,17 @@ def _attach_constraints(
 
 
 def _port_definition(element, file: Path) -> PortDefinition:
-    """Repo PortDefinition from a sysmlpy port definition."""
+    """Repo PortDefinition from a sysmlpy port definition.
+
+    ``item`` members are not part of the port contract yet: they are reported
+    by name instead of being dropped silently.
+    """
+    if element.items:
+        names = ", ".join(unquote_name(item.name) for item in element.items)
+        raise ValueError(
+            f"unsupported item member(s) {names} in port definition "
+            f"'{unquote_name(element.name)}' ({file})"
+        )
     port_def = PortDefinition(
         name=unquote_name(element.name),
         doc=element.doc,
@@ -531,4 +556,5 @@ def _attribute(element, redefines: tuple[str, ...] = ()) -> Attribute:
         value=normalize_value(element),
         multiplicity=multiplicity(element),
         redefines=redefines,
+        direction=port_direction(element),
     )

@@ -85,6 +85,9 @@ class Attribute:
 
     ``redefines`` keeps the features redefined by ``:>>`` (``("scenario",)``);
     the usage keeps the inherited feature name in ``name``.
+
+    ``direction`` is the port-member direction as written (``"in"``, ``"out"``,
+    ``"inout"``) or ``None`` when the member is undirected or not a port member.
     """
 
     name: str
@@ -93,6 +96,7 @@ class Attribute:
     doc: str | None = None
     multiplicity: str | None = None
     redefines: tuple[str, ...] = ()
+    direction: str | None = None
 
     @property
     def is_list(self) -> bool:
@@ -139,6 +143,11 @@ class PortUsage:
 
     ``multiplicity`` is the declared occurrence range as written (``"3"``); a
     fixed multiplicity expands the port's connectors to indexed names.
+
+    ``conjugated`` marks ``port sink : ~Signal;``: the usage is typed by the
+    conjugated definition ``Signal::'~Signal'``, whose ``in`` and ``out``
+    members are flipped. ``type_name`` stays the base definition name, so both
+    ends resolve to the same :class:`PortDefinition`.
     """
 
     name: str
@@ -146,6 +155,22 @@ class PortUsage:
     type_name: str
     doc: str | None = None
     multiplicity: str | None = None
+    conjugated: bool = False
+
+    def effective_member_direction(self, attribute: Attribute) -> str | None:
+        """The direction a definition member takes on this usage.
+
+        Conjugation flips a member's own ``in``/``out`` direction; ``inout`` and
+        undirected members keep theirs (KerML 1.0 §8.3.3.1.2). A member without
+        its own direction falls back to the usage direction, unflipped: the
+        usage direction describes the port, not the definition's members.
+        """
+        direction = attribute.direction
+        if direction is None:
+            return self.direction
+        if self.conjugated and direction in ("in", "out"):
+            return "out" if direction == "in" else "in"
+        return direction
 
 
 @dataclass

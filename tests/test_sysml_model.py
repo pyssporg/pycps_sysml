@@ -320,6 +320,114 @@ def test_port_directions(tmp_path) -> None:
     assert ports["a"].type_name == "Signal"
 
 
+def test_port_member_directions(tmp_path) -> None:
+    """Port-definition attribute members keep their declared in/out direction."""
+    model_file = tmp_path / "directions.sysml"
+    write_model(
+        model_file,
+        fixture_text("sysml-model/directions.sysml"),
+    )
+
+    port_def = load(model_file).port_definitions["MixedSignal"]
+
+    assert list(port_def.attributes) == ["p", "m", "u"]
+    assert port_def.attributes["p"].direction == "in"
+    assert port_def.attributes["p"].multiplicity == "3"
+    assert port_def.attributes["m"].direction == "out"
+    assert port_def.attributes["m"].multiplicity is None
+    assert port_def.attributes["u"].direction is None
+
+
+def test_conjugated_port_usage_resolves_to_the_base_definition(tmp_path) -> None:
+    """``~P`` keeps the base type name, sets the flag, and resolves to ``P``."""
+    model_file = tmp_path / "conjugated.sysml"
+    write_model(model_file, fixture_text("sysml-model/conjugated.sysml"))
+
+    architecture = load(model_file)
+    source_ports = architecture.part_definitions["Source"].ports
+    sink_ports = architecture.part_definitions["Sink"].ports
+
+    assert source_ports["fluid"].type_name == "FluidState"
+    assert source_ports["fluid"].conjugated is False
+    assert sink_ports["fluid"].type_name == "FluidState"
+    assert sink_ports["fluid"].conjugated is True
+    assert architecture.resolve_port(sink_ports["fluid"]) is architecture.port_definitions[
+        "FluidState"
+    ]
+
+    # A quoted name is unquoted like any declared name before resolution.
+    assert sink_ports["odd"].type_name == "Flu-id"
+    assert sink_ports["odd"].conjugated is True
+    assert architecture.resolve_port(sink_ports["odd"]) is architecture.port_definitions[
+        "Flu-id"
+    ]
+
+
+def test_conjugated_usage_flips_directed_member_directions(tmp_path) -> None:
+    """Conjugation flips ``in``/``out`` members; ``inout``, undirected, and
+    usage fallbacks stay unflipped."""
+    model_file = tmp_path / "conjugated.sysml"
+    write_model(model_file, fixture_text("sysml-model/conjugated.sysml"))
+
+    architecture = load(model_file)
+    definition = architecture.port_definitions["FluidState"]
+    source = architecture.part_definitions["Source"].ports["fluid"]
+    sink = architecture.part_definitions["Sink"].ports["fluid"]
+
+    def directions(usage):
+        return {
+            name: usage.effective_member_direction(attribute)
+            for name, attribute in definition.attributes.items()
+        }
+
+    assert directions(source) == {
+        "pressure": "in",
+        "flowRate": "out",
+        "st": "inout",
+        "tag": "in",
+    }
+    assert directions(sink) == {
+        "pressure": "out",
+        "flowRate": "in",
+        "st": "inout",
+        "tag": "in",
+    }
+
+
+def test_conjugated_port_usage_round_trips(tmp_path) -> None:
+    """load → export → load writes the tilde back and keeps the flag."""
+    source = tmp_path / "conjugated.sysml"
+    write_model(source, fixture_text("sysml-model/conjugated.sysml"))
+
+    architecture = load(source)
+    exported = architecture.export_declared()["conjugated.sysml"]
+    assert "port fluid : ~FluidState;" in exported
+    assert "port odd : ~'Flu-id';" in exported
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    (output_dir / "conjugated.sysml").write_text(exported, encoding="utf-8")
+
+    reloaded = load(output_dir)
+    assert _architecture_summary(reloaded) == _architecture_summary(architecture)
+    assert reloaded.part_definitions["Sink"].ports["fluid"].conjugated is True
+
+
+def test_port_definition_item_member_is_rejected(tmp_path) -> None:
+    """A port definition cannot carry item members; the error names both."""
+    model_file = tmp_path / "port-item.sysml"
+    write_model(
+        model_file,
+        fixture_text("sysml-model/port-item.sysml"),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=r"unsupported item member\(s\) x in port definition 'FuelPort'",
+    ):
+        load(model_file)
+
+
 def test_part_definition_doc(tmp_path) -> None:
     """A part def's doc comment becomes PartDefinition.doc."""
     model_file = tmp_path / "doc.sysml"
@@ -558,6 +666,7 @@ def _architecture_summary(architecture: Architecture) -> dict:
                         attribute.effective_type_name,
                         attribute.multiplicity,
                         attribute.value,
+                        attribute.direction,
                     )
                     for attribute in port_def.attributes.values()
                 },
@@ -573,6 +682,7 @@ def _architecture_summary(architecture: Architecture) -> dict:
                         attribute.effective_type_name,
                         attribute.multiplicity,
                         attribute.value,
+                        attribute.direction,
                     )
                     for attribute in attribute_def.attributes.values()
                 },
@@ -587,6 +697,7 @@ def _architecture_summary(architecture: Architecture) -> dict:
                         attribute.effective_type_name,
                         attribute.multiplicity,
                         attribute.value,
+                        attribute.direction,
                     )
                     for attribute in part_def.attributes.values()
                 },
@@ -641,6 +752,29 @@ def test_export_round_trip(tmp_path) -> None:
     assert reloaded.port_definitions["Signal"].doc == "A signal."
     assert reloaded.part_definitions["Source"].doc == "Source doc."
     assert reloaded.requirement_definitions["Connected"].text == "src must connect to dst"
+
+
+def test_port_member_directions_round_trip(tmp_path) -> None:
+    """load → export → load keeps each port member's own direction."""
+    source = tmp_path / "directions.sysml"
+    write_model(
+        source,
+        fixture_text("sysml-model/directions.sysml"),
+    )
+
+    architecture = load(source)
+    exported = architecture.export_declared()["directions.sysml"]
+    assert "in attribute p : Real[3];" in exported
+    assert "out attribute m : Real;" in exported
+    assert "attribute u : Real;" in exported
+
+    output_dir = tmp_path / "output"
+    output_dir.mkdir()
+    (output_dir / "directions.sysml").write_text(exported, encoding="utf-8")
+
+    reloaded = load(output_dir)
+    assert _architecture_summary(reloaded) == _architecture_summary(architecture)
+    assert reloaded.port_definitions["MixedSignal"].attributes["p"].direction == "in"
 
 
 def test_quoted_names_load_unquoted_and_round_trip(tmp_path) -> None:

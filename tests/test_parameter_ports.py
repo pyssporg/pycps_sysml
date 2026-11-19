@@ -84,6 +84,24 @@ def test_out_direction_is_rejected(tmp_path: Path) -> None:
         parameter_interface(architecture, architecture.get_part_def("Comp"))
 
 
+def test_directed_parameter_member_is_rejected(tmp_path: Path) -> None:
+    """A parameter interface carries declarations only, never a direction."""
+    architecture = _load(
+        tmp_path,
+        _model(
+            interface_members=(
+                "attribute gain : Real = 2.0;\n"
+                "    attribute count : Integer;\n"
+                "    attribute xs : Real[2];\n"
+                "    out attribute m : Real;"
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="members must be undirected"):
+        parameter_interface(architecture, architecture.get_part_def("Comp"))
+
+
 def test_parameter_items_default_is_zero_based(tmp_path: Path) -> None:
     """The array suffix convention is ``[0]`` unless a base index is asked for."""
     architecture = _load(tmp_path, _model())
