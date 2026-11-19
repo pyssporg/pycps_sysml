@@ -105,3 +105,26 @@ def effective_members(
     if architecture.stored_key(definition) in seen:
         return {}
     return dict(_effective_view(architecture, definition).attributes)
+
+
+def is_inherited_schema_slot(
+    architecture: Architecture,
+    part_def: PartDefinition,
+    name: str,
+    attribute: Attribute,
+    *,
+    slot_name: str,
+    marker: str,
+) -> bool:
+    """True for the canonical slot inherited unfilled from a role marker.
+
+    A role marker such as ``FmuModel`` declares ``attribute fmu_meta :
+    FmuMetadata;`` as a schema slot. A definition that inherits the marker but
+    does not author metadata inherits that placeholder usage; it means "no
+    metadata authored", not a use of the schema directly. A locally declared
+    usage of the same name shadows the placeholder and is not a slot.
+    """
+    if name != slot_name or name in part_def.attributes:
+        return False
+    definition = architecture.resolve_attribute_def(attribute)
+    return definition is not None and short_name(definition.name) == marker

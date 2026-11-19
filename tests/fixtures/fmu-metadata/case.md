@@ -11,11 +11,14 @@ All paths are relative to this directory.
 | Path | Kind |
 | --- | --- |
 | `template.sysml` | Input, template with `$marker`, `$concrete`, `$part_body`, `$COMPOSITION_NAME` |
+| `role-slot.sysml` | Input, template with `$part_body`; the marker declares the inherited `fmu_meta` slot |
 
 The marker definition, the concrete definition, and the part body stay inline in
 `tests/test_metadata_dialects.py` on purpose: they are short fragments whose
 point is the difference between two tests, not a document a reviewer reads on
-its own.
+its own. The role-slot fixture instead models `FmuModel` with its inherited
+`fmu_meta : FmuMetadata` slot, so the accessor can tell an unfilled slot from a
+locally declared schema usage.
 
 ## What this case proves
 
@@ -30,6 +33,7 @@ reads as SysML; the accessor is the oracle.
 | Date | Change | Reason |
 | --- | --- | --- |
 | 2026-11-05 | Accessor-level subset copied into this library | The typed-metadata accessor was extracted from the SSP toolchain |
+| 2026-11-19 | Added `role-slot.sysml` | The role marker now owns an inherited metadata slot that may be filled or left empty |
 
 ## Provenance
 

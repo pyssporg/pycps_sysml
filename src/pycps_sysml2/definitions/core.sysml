@@ -1,7 +1,11 @@
 package PysspCore {
-  part def SspModel;
+  part def SspModel {
+    attribute ssp_meta : SspMetadata;
+  }
   part def Analysis;
-  part def FmuModel;
+  part def FmuModel {
+    attribute fmu_meta : FmuMetadata;
+  }
 
   port def ParameterInterface;
 

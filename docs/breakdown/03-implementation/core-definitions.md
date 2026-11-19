@@ -14,6 +14,15 @@ vocabulary (`package PysspCore`): `SspModel`, `Analysis`, `FmuModel`,
 `ParameterInterface`, `ParameterSet`, `SourcedMetadata`, `FmuMetadata`,
 `SspMetadata`, `DefaultExperiment`, and `Experiment` (`:> DefaultExperiment`).
 `FmuMetadata` and `SspMetadata` inherit `source` from `SourcedMetadata`.
+`SspModel` declares `attribute ssp_meta : SspMetadata;` and `FmuModel` declares
+`attribute fmu_meta : FmuMetadata;`; `Analysis` stays empty. A model that
+specializes a marker and authors no metadata inherits that slot unfilled, which
+reads as "no metadata": both `_metadata_usage` helpers skip it, so the accessor
+returns `None` and `require_fmu_metadata` reports "no FMU metadata". A locally
+declared usage typed by the schema itself still raises "schema directly", a
+same-name concrete usage shadows the slot, and any other concrete name is
+accepted. No new core key carries this: the slots reuse the two schemas already
+in the package.
 `DefaultExperiment` carries `startTime`, `stopTime`, `stepSize`, and
 `tolerance`; no field authors a numeric default, so an unset value stays unset.
 `tolerance` is optional and must be positive when present.

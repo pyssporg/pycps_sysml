@@ -26,6 +26,8 @@ Records live in the cold-storage archive; extract one with `pb archive read <ID>
   A definition keeps only its declared members; effective_members merges ancestors on demand, and exporters stay declared-only.
 - **DEC-007** — Sourced metadata base and optional experiment tolerance · accepted · 2026-11-19 · `DEC-007`
   FmuMetadata and SspMetadata share SourcedMetadata, and DefaultExperiment carries an optional, positive FMI tolerance with no numeric defaults.
+- **DEC-008** — Role markers own a canonical metadata slot · accepted · 2026-11-19 · `DEC-008`
+  SspModel and FmuModel declare canonical metadata slots; an inherited unfilled slot means no metadata, while a locally used schema stays rejected.
 
 ### Implementation
 

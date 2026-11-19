@@ -35,6 +35,7 @@ from dataclasses import dataclass
 
 from pycps_sysml2.core.fmi_helpers import fmu_resource_path
 from pycps_sysml2.metadata.helpers import (
+    is_inherited_schema_slot,
     short_name,
     specializes_marker_deep,
 )
@@ -77,6 +78,15 @@ def _metadata_usage(
     for name, attribute in members.attributes.items():
         definition = architecture.resolve_attribute_def(attribute)
         if is_fmu_metadata_definition(architecture, definition):
+            if is_inherited_schema_slot(
+                architecture,
+                part_def,
+                name,
+                attribute,
+                slot_name=FMU_METADATA_ATTR,
+                marker=FMU_METADATA_MARKER,
+            ):
+                continue
             assert definition is not None
             found.append((name, attribute, definition))
 
@@ -96,7 +106,15 @@ def _metadata_usage(
             )
         return name, attribute, definition
 
-    if FMU_METADATA_ATTR in members.attributes:
+    slot = members.attributes.get(FMU_METADATA_ATTR)
+    if slot is not None and not is_inherited_schema_slot(
+        architecture,
+        part_def,
+        FMU_METADATA_ATTR,
+        slot,
+        slot_name=FMU_METADATA_ATTR,
+        marker=FMU_METADATA_MARKER,
+    ):
         raise ValueError(
             f"{part_def.name}.{FMU_METADATA_ATTR} must be typed by an "
             f"attribute def marked ':> {FMU_METADATA_MARKER}'"

@@ -14,9 +14,9 @@ Anything not listed here is language the IR keeps but no marker interprets.
 
 | marker or construct | attaches to | value | code ref |
 |---|---|---|---|
-| `part def SspModel` | part def, empty marker | marker | `metadata/roles.py` |
+| `part def SspModel` | part def; declares `ssp_meta : SspMetadata` | marker; an inherited unfilled slot authors no metadata | `metadata/roles.py`, `definitions/core.sysml` |
 | `part def Analysis` | part def, empty marker | marker | `metadata/roles.py` |
-| `part def FmuModel` | part def, empty marker | marker | `metadata/roles.py` |
+| `part def FmuModel` | part def; declares `fmu_meta : FmuMetadata` | marker; an inherited unfilled slot authors no metadata | `metadata/roles.py`, `definitions/core.sysml` |
 | `attribute def SourcedMetadata` | attribute def | `source` String; shared base for artifact sources | `definitions/core.sysml` |
 | `attribute def DefaultExperiment` | attribute def | `startTime`, `stopTime`, `stepSize`, `tolerance` Real | `metadata/roles.py` |
 | `attribute def Experiment :> DefaultExperiment` | attribute def marker | `stepSize` becomes mandatory for a type specializing it | `metadata/roles.py` |

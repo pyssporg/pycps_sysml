@@ -17,6 +17,7 @@ from pycps_sysml2.metadata.fmu_metadata import (
     component_source,
     fmu_metadata,
     is_fmu_metadata_definition,
+    require_fmu_metadata,
 )
 from pycps_sysml2.metadata.ssp_metadata import (
     SSP_METADATA_MARKER,
@@ -59,6 +60,20 @@ def _load(tmp_path: Path, text: str) -> Architecture:
     architecture_dir = tmp_path / "arch"
     write_model(architecture_dir / "model.sysml", text)
     return load(architecture_dir)
+
+
+SSP_SLOT_MODEL = """package Ssp {
+  attribute def SspMetadata { attribute source : String; }
+  attribute def XSsp :> SspMetadata {
+    attribute source = "models/ssp/example";
+  }
+  part def SspModel {
+    attribute ssp_meta : SspMetadata;
+  }
+  part def X :> SspModel {
+    $body
+  }
+}"""
 
 
 SSP_MODEL = """package Ssp {
@@ -199,6 +214,53 @@ def test_metadata_marker_cannot_be_used_directly(tmp_path: Path) -> None:
         fmu_metadata(architecture, architecture.get_part_def("Comp"))
 
 
+def test_inherited_fmu_slot_without_a_fill_is_no_metadata(tmp_path: Path) -> None:
+    architecture = _load(
+        tmp_path,
+        render_fixture("fmu-metadata/role-slot.sysml", part_body=""),
+    )
+    part_def = architecture.get_part_def("X")
+
+    assert fmu_metadata(architecture, part_def) is None
+    assert require_fmu_metadata(architecture, [part_def]) == (
+        "X: no FMU metadata; declare 'attribute fmu_meta : <Name>FmuMetadata;'",
+    )
+
+
+def test_inherited_fmu_slot_is_filled_by_a_same_name_usage(tmp_path: Path) -> None:
+    architecture = _load(
+        tmp_path,
+        render_fixture(
+            "fmu-metadata/role-slot.sysml",
+            part_body="attribute fmu_meta : XFmu;",
+        ),
+    )
+
+    metadata = fmu_metadata(architecture, architecture.get_part_def("X"))
+
+    assert metadata is not None
+    assert metadata.source == "build/fmus/X.fmu"
+    assert metadata.implementation == "CoSimulation"
+
+
+def test_inherited_fmu_slot_is_skipped_for_a_differently_named_usage(
+    tmp_path: Path,
+) -> None:
+    architecture = _load(
+        tmp_path,
+        render_fixture(
+            "fmu-metadata/role-slot.sysml",
+            part_body="attribute other : XFmu;",
+        ),
+    )
+
+    metadata = fmu_metadata(architecture, architecture.get_part_def("X"))
+
+    assert metadata is not None
+    assert metadata.source == "build/fmus/X.fmu"
+    assert metadata.implementation == "CoSimulation"
+
+
 def test_missing_metadata_marker_is_rejected(tmp_path: Path) -> None:
     architecture = _load(tmp_path, _metadata_model(marker=""))
 
@@ -247,6 +309,40 @@ def test_ssp_metadata_requires_an_ssp_model(tmp_path: Path) -> None:
     assert ssp_metadata(architecture, architecture.get_part_def("LegacyBody"))
     with pytest.raises(ValueError, match="not marked ':> SspModel'"):
         ssp_metadata(architecture, architecture.get_part_def("PlainPart"))
+
+
+def test_inherited_ssp_slot_without_a_fill_is_no_metadata(tmp_path: Path) -> None:
+    architecture = _load(tmp_path, SSP_SLOT_MODEL.replace("$body", ""))
+
+    assert ssp_metadata(architecture, architecture.get_part_def("X")) is None
+
+
+def test_inherited_ssp_slot_is_filled_by_a_same_name_usage(
+    tmp_path: Path,
+) -> None:
+    architecture = _load(
+        tmp_path,
+        SSP_SLOT_MODEL.replace("$body", "attribute ssp_meta : XSsp;"),
+    )
+
+    metadata = ssp_metadata(architecture, architecture.get_part_def("X"))
+
+    assert metadata is not None
+    assert metadata.source == "models/ssp/example"
+
+
+def test_inherited_ssp_slot_is_skipped_for_a_differently_named_usage(
+    tmp_path: Path,
+) -> None:
+    architecture = _load(
+        tmp_path,
+        SSP_SLOT_MODEL.replace("$body", "attribute other : XSsp;"),
+    )
+
+    metadata = ssp_metadata(architecture, architecture.get_part_def("X"))
+
+    assert metadata is not None
+    assert metadata.source == "models/ssp/example"
 
 
 def test_a_marker_definition_is_not_its_own_instance() -> None:

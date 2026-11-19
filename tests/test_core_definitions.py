@@ -135,6 +135,29 @@ def test_metadata_and_experiment_inherit_from_their_core_bases() -> None:
     assert "tolerance" in experiment.attributes
 
 
+def test_role_markers_own_their_metadata_slot() -> None:
+    architecture = load(core_definitions())
+
+    fmu_members = effective_members(
+        architecture, architecture.get_part_def("FmuModel")
+    ).attributes
+    assert set(fmu_members) == {"fmu_meta"}
+    assert fmu_members["fmu_meta"].type_name == "FmuMetadata"
+
+    ssp_members = effective_members(
+        architecture, architecture.get_part_def("SspModel")
+    ).attributes
+    assert set(ssp_members) == {"ssp_meta"}
+    assert ssp_members["ssp_meta"].type_name == "SspMetadata"
+
+    assert (
+        effective_members(
+            architecture, architecture.get_part_def("Analysis")
+        ).attributes
+        == {}
+    )
+
+
 def test_load_without_includes_leaves_markers_unresolved(tmp_path) -> None:
     architecture = load(_marker_user(tmp_path))
 

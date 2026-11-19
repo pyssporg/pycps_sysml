@@ -30,6 +30,7 @@ from dataclasses import dataclass
 
 from pycps_sysml2.metadata.helpers import (
     effective_members,
+    is_inherited_schema_slot,
     short_name,
     specializes_marker_deep,
 )
@@ -68,6 +69,15 @@ def _metadata_usage(
     for name, attribute in members.items():
         definition = architecture.resolve_attribute_def(attribute)
         if is_ssp_metadata_definition(architecture, definition):
+            if is_inherited_schema_slot(
+                architecture,
+                part_def,
+                name,
+                attribute,
+                slot_name=SSP_METADATA_ATTR,
+                marker=SSP_METADATA_MARKER,
+            ):
+                continue
             assert definition is not None
             found.append((name, attribute, definition))
 
@@ -87,7 +97,15 @@ def _metadata_usage(
             )
         return name, attribute, definition
 
-    if SSP_METADATA_ATTR in members:
+    slot = members.get(SSP_METADATA_ATTR)
+    if slot is not None and not is_inherited_schema_slot(
+        architecture,
+        part_def,
+        SSP_METADATA_ATTR,
+        slot,
+        slot_name=SSP_METADATA_ATTR,
+        marker=SSP_METADATA_MARKER,
+    ):
         raise ValueError(
             f"{part_def.name}.{SSP_METADATA_ATTR} must be typed by an "
             f"attribute def marked ':> {SSP_METADATA_MARKER}'"

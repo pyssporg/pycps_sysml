@@ -17,6 +17,7 @@ the leaf is the source of truth; the record is how the state got there.
 - **DEC-005** — State: `02-architecture/dialect.md` (Dialect inventory) · Artifacts: —
 - **DEC-006** — State: `02-architecture/model-and-policy.md` (Model and policy) · Artifacts: `src/pycps_sysml2/model/effective.py`
 - **DEC-007** — State: `03-implementation/core-definitions.md` (Core definitions) · Artifacts: `src/pycps_sysml2/definitions/core.sysml`, `src/pycps_sysml2/metadata/roles.py`
+- **DEC-008** — State: `02-architecture/dialect.md` (Dialect inventory) · Artifacts: `src/pycps_sysml2/definitions/core.sysml`, `src/pycps_sysml2/metadata/helpers.py`, `src/pycps_sysml2/metadata/fmu_metadata.py`, `src/pycps_sysml2/metadata/ssp_metadata.py`
 
 ### Implementation
 
