@@ -7,7 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-19
+
+### Removed
+
+- The `pyssp_*` attribute vocabulary: `CONTROL_PREFIX`, `ControlAttributes`,
+  `pyssp_default_start_time`, `pyssp_default_stop_time`,
+  `pyssp_flat_connector`, and the control-name skips in the parameter dialect.
+  Every remaining `pyssp_*` name is a migration error naming the typed
+  container to use instead.
+- The flat-connector rejection of a port-def attribute; pass
+  `--flat-connector` at export time.
+
 ### Added
+
+- `DefaultExperiment` core attribute definition and `Experiment :>
+  DefaultExperiment`; `experiment_attribute`/`read_experiment` take a required
+  keyword, step size is mandatory only for `Experiment`, and
+  `Experiment.step_size` may be `None`.
+- `classify_attribute` and `AttributeKind` as the one classification point for
+  FMU metadata, SSP metadata, parameter sets, experiments, and plain typed or
+  untyped attributes.
+
+### Changed
 
 - `validate(architecture, composition=None, *, roles=SSP_ROLES, policy=SSP_POLICY)`
   runs every applicable dialect validator as one `ValidationReport` with stable

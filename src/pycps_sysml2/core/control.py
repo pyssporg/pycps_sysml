@@ -1,103 +1,81 @@
-"""Control-attribute names shared by the SysML adapters.
+"""Retired ``pyssp_*`` attribute names and their migration errors.
 
-Metadata that has no first-class SysML v2 equivalent is carried as ordinary
-``pyssp_*`` attributes. Every generator skips them as model data. The names and
-the recognition rule live in one tiny module so the model adapter, the parameter
-layer, and the artifact synthesis layer do not need to import each other.
+The ``pyssp_*`` attribute vocabulary is gone. Every special datum is carried by
+a typed attribute container — ``attribute <name> : <Def>;`` where ``<Def>`` is
+an ``attribute def`` specializing a marker (``SspMetadata``, ``FmuMetadata``,
+``DefaultExperiment``/``Experiment``, ``ParameterSet``) — or by a ``part def``
+marker supertype. Recognition is by type, never by name.
 
-The module constants are the documented defaults. A consumer that owns a
-different vocabulary constructs a :class:`ControlAttributes` with its own
-prefix and retired map and passes it in; nothing reads the module globals on
-that path.
+This module keeps only the migration rule: a document that still writes one of
+the removed names must fail with the replacement, never pass silently. The
+residual rule is deliberately a catch-all: any other ``pyssp_`` name is an
+error too, because the whole prefix was removed in 0.3.0.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pycps_sysml2.model import Architecture
+    from pycps_sysml2.model import Architecture, Definition
 
-CONTROL_PREFIX = "pyssp_"
-
-# Removed control attributes. They still match the prefix, so generators would
-# otherwise skip them silently; validation turns them into migration errors
-# instead.
-RETIRED_CONTROL_ATTRS: dict[str, str] = {
-    f"{CONTROL_PREFIX}implementation": (
+#: Removed attribute names and the replacement to write instead.
+RETIRED_ATTRIBUTES: dict[str, str] = {
+    "pyssp_default_start_time": (
+        "declare 'attribute defaults : <X>DefaultExperiment { attribute "
+        "startTime = ...; attribute stopTime = ...; }' instead"
+    ),
+    "pyssp_default_stop_time": (
+        "declare 'attribute defaults : <X>DefaultExperiment { attribute "
+        "startTime = ...; attribute stopTime = ...; }' instead"
+    ),
+    "pyssp_flat_connector": (
+        "pass --flat-connector at export time; it is not model data"
+    ),
+    "pyssp_implementation": (
         "use 'attribute fmu_meta : <Part>FmuMetadata { attribute "
         "implementation = \"...\"; }'"
     ),
-    f"{CONTROL_PREFIX}parameter_set": (
+    "pyssp_parameter_set": (
         "define an 'attribute def <Set> :> ParameterSet' and bind it to the "
         "component with 'bind'"
     ),
 }
 
+#: The removed vocabulary's prefix. A private literal: the prefix is history,
+#: not a configurable control vocabulary.
+_RETIRED_PREFIX = "pyssp_"
 
-@dataclass(frozen=True)
-class ControlAttributes:
-    """The control-attribute vocabulary one consumer recognises."""
+#: The migration error for a ``pyssp_`` name absent from the retired map.
+_REMOVED_VOCABULARY = (
+    "the 'pyssp_*' attribute vocabulary was removed in 0.3.0. Declare a typed "
+    "attribute container instead: 'attribute <name> : <Def>;' where '<Def>' "
+    "is an attribute def specializing a marker"
+)
 
-    prefix: str = CONTROL_PREFIX
-    retired: Mapping[str, str] = field(
-        default_factory=lambda: dict(RETIRED_CONTROL_ATTRS)
+
+def _unsupported(definition: Definition, name: str, message: str) -> ValueError:
+    location = f" in {definition.source_file}" if definition.source_file else ""
+    return ValueError(
+        f"{definition.name}.{name}{location} is no longer supported; {message}"
     )
 
-    @property
-    def default_start(self) -> str:
-        return f"{self.prefix}default_start_time"
 
-    @property
-    def default_stop(self) -> str:
-        return f"{self.prefix}default_stop_time"
+def validate_retired_attributes(architecture: Architecture) -> None:
+    """Reject every remaining ``pyssp_*`` attribute, naming its replacement.
 
-    @property
-    def flat_connector(self) -> str:
-        return f"{self.prefix}flat_connector"
-
-    def is_control(self, name: str) -> bool:
-        return name.startswith(self.prefix)
-
-    def is_retired(self, name: str) -> bool:
-        return name in self.retired
-
-    def validate(self, architecture: Architecture) -> None:
-        """Reject attributes removed by the typed-metadata migration."""
-        definitions = list(architecture.part_definitions.values()) + list(
-            architecture.port_definitions.values()
-        )
-        for definition in definitions:
-            for name in definition.attributes:
-                message = self.retired.get(name)
-                if message is not None:
-                    raise ValueError(
-                        f"{definition.name}.{name} is no longer supported; {message}"
-                    )
-
-
-#: The default vocabulary; every module constant below is derived from it.
-CONTROL = ControlAttributes()
-DEFAULT_START_ATTR = CONTROL.default_start
-DEFAULT_STOP_ATTR = CONTROL.default_stop
-FLAT_CONNECTOR_ATTR = CONTROL.flat_connector
-
-
-def is_control_attribute(
-    name: str, *, attributes: ControlAttributes = CONTROL
-) -> bool:
-    return attributes.is_control(name)
-
-
-def is_retired_control_attribute(
-    name: str, *, attributes: ControlAttributes = CONTROL
-) -> bool:
-    return attributes.is_retired(name)
-
-
-def validate_retired_control_attributes(
-    architecture: Architecture, *, attributes: ControlAttributes = CONTROL
-) -> None:
-    """Reject retired control attributes, using ``attributes``' retired map."""
-    attributes.validate(architecture)
+    Definitions and their attributes are scanned in declaration order, so the
+    first removed name raises. A name in :data:`RETIRED_ATTRIBUTES` gets its
+    targeted hint; any other ``pyssp_`` name gets the residual error. Neither
+    is ever skipped.
+    """
+    definitions = list(architecture.part_definitions.values()) + list(
+        architecture.port_definitions.values()
+    )
+    for definition in definitions:
+        for name in definition.attributes:
+            message = RETIRED_ATTRIBUTES.get(name)
+            if message is not None:
+                raise _unsupported(definition, name, message)
+            if name.startswith(_RETIRED_PREFIX):
+                raise _unsupported(definition, name, _REMOVED_VOCABULARY)

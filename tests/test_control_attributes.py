@@ -1,8 +1,9 @@
-"""The control-attribute vocabulary is injectable, not a module global.
+"""The retired ``pyssp_*`` vocabulary fails with a migration hint.
 
-A consumer may carry a different prefix and a different retired map. The module
-constants stay as the documented defaults; these tests pin both paths so a
-consumer cannot silently fall back to ``CONTROL_PREFIX``.
+Nothing in the dialect recognizes a name prefix any more. These tests pin the
+one surviving rule: a document that still writes a removed name must raise, and
+the message must name the typed-container replacement. A name outside the map
+is not skipped either — the whole prefix was removed in 0.3.0.
 """
 
 from __future__ import annotations
@@ -10,18 +11,10 @@ from __future__ import annotations
 import pytest
 
 from pycps_sysml2.core.control import (
-    CONTROL,
-    CONTROL_PREFIX,
-    DEFAULT_START_ATTR,
-    DEFAULT_STOP_ATTR,
-    FLAT_CONNECTOR_ATTR,
-    RETIRED_CONTROL_ATTRS,
-    ControlAttributes,
-    is_control_attribute,
-    is_retired_control_attribute,
-    validate_retired_control_attributes,
+    RETIRED_ATTRIBUTES,
+    validate_retired_attributes,
 )
-from pycps_sysml2.model import Architecture, Attribute, PartDefinition
+from pycps_sysml2.model import Architecture, Attribute, PartDefinition, PortDefinition
 
 
 def _architecture(*attribute_names: str) -> Architecture:
@@ -39,78 +32,66 @@ def _architecture(*attribute_names: str) -> Architecture:
     )
 
 
-def test_the_default_prefix_recognises_control_attributes() -> None:
-    assert is_control_attribute("pyssp_x")
-    assert is_control_attribute(DEFAULT_START_ATTR)
-    assert not is_control_attribute("x")
-
-
-def test_the_module_constants_are_the_default_vocabulary() -> None:
-    assert CONTROL.prefix == CONTROL_PREFIX == "pyssp_"
-    assert DEFAULT_START_ATTR == "pyssp_default_start_time"
-    assert DEFAULT_STOP_ATTR == "pyssp_default_stop_time"
-    assert FLAT_CONNECTOR_ATTR == "pyssp_flat_connector"
-    assert CONTROL.default_start == DEFAULT_START_ATTR
-    assert CONTROL.default_stop == DEFAULT_STOP_ATTR
-    assert CONTROL.flat_connector == FLAT_CONNECTOR_ATTR
-
-
-def test_a_custom_prefix_recognises_only_its_own_attributes() -> None:
-    attributes = ControlAttributes(prefix="acme_")
-
-    assert attributes.is_control("acme_x")
-    assert not attributes.is_control("pyssp_x")
-    assert is_control_attribute("acme_x", attributes=attributes)
-    assert not is_control_attribute("pyssp_x", attributes=attributes)
-
-
-def test_a_custom_prefix_derives_its_own_names() -> None:
-    attributes = ControlAttributes(prefix="acme_")
-
-    assert attributes.default_start == "acme_default_start_time"
-    assert attributes.default_stop == "acme_default_stop_time"
-    assert attributes.flat_connector == "acme_flat_connector"
-
-
-def test_retired_attributes_are_recognised_by_default() -> None:
-    assert set(RETIRED_CONTROL_ATTRS) == {
+def test_the_retired_map_covers_every_removed_tag() -> None:
+    assert set(RETIRED_ATTRIBUTES) == {
+        "pyssp_default_start_time",
+        "pyssp_default_stop_time",
+        "pyssp_flat_connector",
         "pyssp_implementation",
         "pyssp_parameter_set",
     }
-    assert is_retired_control_attribute("pyssp_implementation")
-    assert not is_retired_control_attribute("pyssp_something_else")
-    assert not is_retired_control_attribute("acme_implementation")
 
 
-def test_validate_rejects_a_retired_attribute() -> None:
-    architecture = _architecture("pyssp_implementation")
-
-    with pytest.raises(ValueError) as excinfo:
-        validate_retired_control_attributes(architecture)
-
-    assert str(excinfo.value).startswith(
-        "Component.pyssp_implementation is no longer supported; "
-    )
-
-
-def test_validate_accepts_the_injected_retired_map() -> None:
-    architecture = _architecture("acme_legacy")
-    attributes = ControlAttributes(
-        prefix="acme_",
-        retired={"acme_legacy": "use 'attribute fmu_meta'"},
-    )
+@pytest.mark.parametrize(
+    ("name", "replacement"),
+    [
+        ("pyssp_default_start_time", "DefaultExperiment"),
+        ("pyssp_default_stop_time", "DefaultExperiment"),
+        ("pyssp_flat_connector", "--flat-connector"),
+        ("pyssp_implementation", "fmu_meta"),
+        ("pyssp_parameter_set", "ParameterSet"),
+    ],
+)
+def test_each_retired_tag_names_its_replacement(
+    name: str, replacement: str
+) -> None:
+    architecture = _architecture(name)
 
     with pytest.raises(ValueError) as excinfo:
-        validate_retired_control_attributes(architecture, attributes=attributes)
+        validate_retired_attributes(architecture)
 
-    assert str(excinfo.value) == (
-        "Component.acme_legacy is no longer supported; use 'attribute fmu_meta'"
+    message = str(excinfo.value)
+    assert message.startswith(f"Component.{name} is no longer supported; ")
+    assert replacement in message
+
+
+def test_an_unlisted_pyssp_name_is_an_error_not_a_skip() -> None:
+    architecture = _architecture("pyssp_something_else")
+
+    with pytest.raises(ValueError) as excinfo:
+        validate_retired_attributes(architecture)
+
+    message = str(excinfo.value)
+    assert "Component.pyssp_something_else is no longer supported" in message
+    assert "removed in 0.3.0" in message
+    assert "typed attribute container" in message
+    assert "attribute <name> : <Def>;" in message
+
+
+def test_a_retired_name_on_a_port_definition_is_also_rejected() -> None:
+    architecture = Architecture(
+        package_name="Pkg",
+        port_definitions={
+            "Signal": PortDefinition(
+                name="Signal",
+                attributes={"pyssp_flat_connector": Attribute(name="pyssp_flat_connector")},
+            )
+        },
     )
 
+    with pytest.raises(ValueError, match="--flat-connector"):
+        validate_retired_attributes(architecture)
 
-def test_the_injected_map_replaces_the_default_one() -> None:
-    """A custom map must not also reject the default retired names."""
-    architecture = _architecture("pyssp_implementation")
-    attributes = ControlAttributes(retired={"acme_legacy": "use something else"})
 
-    validate_retired_control_attributes(architecture, attributes=attributes)
+def test_a_non_pyssp_name_is_left_alone() -> None:
+    validate_retired_attributes(_architecture("gain", "fmu_meta"))

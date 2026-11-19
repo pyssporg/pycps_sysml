@@ -1,4 +1,4 @@
-<!-- GENERATED FILE — do not edit. Regenerate with pb-registers. -->
+<!-- GENERATED FILE — do not edit. Regenerate with `pb registers`. -->
 
 # Decision Log
 
@@ -7,6 +7,7 @@ stream.
 
 | Date | ID | Decision | Layers | Status | Record |
 |---|---|---|---|---|---|
+| 2026-11-19 | DEC-005 | Typed containers replace the pyssp_* vocabulary | architecture, implementation | accepted | `DEC-005` |
 | 2026-11-05 | DEC-004 | Imports gate cross-package visibility | architecture, implementation | accepted | `DEC-004` |
 | 2026-11-05 | DEC-003 | sysmlpy is pinned exactly | implementation | accepted | `DEC-003` |
 | 2026-11-05 | DEC-002 | Domain selection is an explicit policy | architecture, implementation | accepted | `DEC-002` |

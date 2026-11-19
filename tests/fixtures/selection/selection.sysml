@@ -2,11 +2,13 @@ package Selection {
   part def SspModel;
   part def Analysis;
 
-  attribute def Experiment {
+  attribute def DefaultExperiment {
     attribute startTime : Real;
     attribute stopTime : Real;
     attribute stepSize : Real;
   }
+
+  attribute def Experiment :> DefaultExperiment;
 
   attribute def BaselineExperiment :> Experiment {
     attribute startTime = 0.0;

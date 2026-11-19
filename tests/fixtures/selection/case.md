@@ -84,6 +84,7 @@ and every reachable point must be selected.
 | 2026-10-30 | Replaced the control attribute with configurations | Slice 2 of `IMP-106`. |
 | 2026-10-30 | Added chain, binding, rebinding, attribute, and plan cases | Cover configuration-derivation branches and error paths. |
 | 2026-11-05 | Copied into this library, generator cases removed | The configuration-derivation layer was extracted; the analysis writer stayed behind |
+| 2026-11-19 | Added `DefaultExperiment` and made `Experiment :> DefaultExperiment` | Experiment containers are typed definitions, not name-prefixed attributes |
 
 ## Provenance
 
@@ -91,5 +92,5 @@ Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`),
 path `tests/fixtures/selection/`. Duplicated rather than referenced because
 this library has no dependency on the SSP toolchain; the model-level
 behaviour is still shared, so the same SysML documents are evidence in both
-repositories. The authored `SspModel` / `pyssp_*` identifiers are this
+repositories. The authored `SspModel` / typed-container identifiers are this
 library's dialect vocabulary, not upstream leakage.

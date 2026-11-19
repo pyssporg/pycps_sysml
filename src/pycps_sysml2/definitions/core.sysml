@@ -16,9 +16,11 @@ package PysspCore {
     attribute source : String;
   }
 
-  attribute def Experiment {
+  attribute def DefaultExperiment {
     attribute startTime : Real;
     attribute stopTime : Real;
     attribute stepSize : Real;
   }
+
+  attribute def Experiment :> DefaultExperiment;
 }

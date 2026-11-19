@@ -19,7 +19,7 @@ It is not a SysML v2 conformance suite, not a general SysML toolchain, and not a
 From the release wheel:
 
 ```bash
-pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml2/releases/download/v0.2.0/pycps_sysml2-0.2.0-py3-none-any.whl"
+pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml2/releases/download/v0.3.0/pycps_sysml2-0.3.0-py3-none-any.whl"
 ```
 
 The one runtime dependency is pinned exactly: `sysmlpy==0.96.4`. From a
@@ -84,13 +84,11 @@ chosen = resolve(
 composition = chosen.get_part_def("PlantComposition")
 print(chosen.part_definitions["PlantComposition"].parts["source"].type_name)
 print(ssp_metadata(chosen, composition).source)
-print(SSP_POLICY.control.default_start)
 ```
 
 ```text
 Step
 plant.sysml
-pyssp_default_start_time
 ```
 
 `resolve` returns a deep copy; `architecture` is untouched. `roles=` is the
@@ -139,8 +137,9 @@ also an error and names both roots. Merged names are recorded in
 `Architecture.included_definitions` and excluded from `export_declared()`.
 
 `core_definitions()` returns the packaged `definitions/core.sysml`
-(`package PysspCore`): `SspModel`, `Analysis`, `ParameterInterface`,
-`ParameterSet`, `FmuMetadata`, `SspMetadata`, and `Experiment`. It is one
+(`package PysspCore`): `SspModel`, `Analysis`, `FmuModel`,
+`ParameterInterface`, `ParameterSet`, `FmuMetadata`, `SspMetadata`,
+`DefaultExperiment`, and `Experiment`. It is one
 possible include, not a special case. The wheel carries the file as package
 data.
 

@@ -28,10 +28,12 @@ from pycps_sysml2.parameters.constraints import (
 )
 from pycps_sysml2.parameters.dialect.composition import (
     AppliedSet,
+    AttributeKind,
     ComponentRef,
     MappingSpec,
     ParameterBind,
     applied_sets,
+    classify_attribute,
     component_definitions,
     component_refs,
     has_parameter_dialect,
@@ -81,6 +83,7 @@ from pycps_sysml2.parameters.variation import (
 __all__ = [
     "AnalysisPlan",
     "AppliedSet",
+    "AttributeKind",
     "ComponentRef",
     "ConstraintReport",
     "ConstraintResult",
@@ -97,6 +100,7 @@ __all__ = [
     "analysis_selection",
     "analysis_selections",
     "applied_sets",
+    "classify_attribute",
     "coerce_parameter_value",
     "component_definitions",
     "component_refs",

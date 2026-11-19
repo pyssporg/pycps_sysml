@@ -62,5 +62,5 @@ Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`),
 path `tests/fixtures/constraints/`. Duplicated rather than referenced because
 this library has no dependency on the SSP toolchain; the model-level
 behaviour is still shared, so the same SysML documents are evidence in both
-repositories. The authored `SspModel` / `pyssp_*` identifiers are this
+repositories. The authored `SspModel` / typed-container identifiers are this
 library's dialect vocabulary, not upstream leakage.

@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from pycps_sysml2.core.control import validate_retired_attributes
 from pycps_sysml2.metadata.fmu_metadata import require_fmu_metadata
 from pycps_sysml2.metadata.helpers import short_name
 from pycps_sysml2.metadata.roles import (
@@ -133,7 +134,7 @@ def validate(
     run("marker-kinds", lambda: validate_marker_definitions(architecture))
     run(
         "retired-control-attributes",
-        lambda: policy.control.validate(architecture),
+        lambda: validate_retired_attributes(architecture),
     )
     if system is not None:
         run(

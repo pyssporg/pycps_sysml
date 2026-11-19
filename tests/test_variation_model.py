@@ -731,7 +731,7 @@ def test_resolve_rejects_a_body_attribute_the_owner_already_declares(
         ValueError,
         match=re.escape(
             "Variant 'withValues' of variation point 'AttributeChoice' "
-            "declares attribute 'pyssp_default_start_time', which definition "
+            "declares attribute 'defaults', which definition "
             "'AttributeSystem' already declares; rename it."
         ),
     ):

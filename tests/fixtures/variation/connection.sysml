@@ -15,7 +15,6 @@ package ConnectionVariation {
   }
 
   port def RealSignal {
-    attribute pyssp_flat_connector : Boolean = true;
     attribute value : Real;
   }
 
@@ -28,18 +27,23 @@ package ConnectionVariation {
     attribute k = 3.0;
   }
 
-  attribute def Experiment {
+  attribute def DefaultExperiment {
     attribute startTime : Real;
     attribute stopTime : Real;
     attribute stepSize : Real;
-    attribute tolerance : Real;
+  }
+
+  attribute def Experiment :> DefaultExperiment;
+
+  attribute def SystemDefaults :> DefaultExperiment {
+    attribute startTime = 0.0;
+    attribute stopTime = 1.0;
   }
 
   attribute def BaselineExperiment :> Experiment {
     attribute startTime = 0.0;
     attribute stopTime = 1.0;
     attribute stepSize = 0.001;
-    attribute tolerance = 0.0001;
   }
 
   attribute def FmuMetadata {
@@ -99,8 +103,7 @@ package ConnectionVariation {
 
   part def System :> SspModel {
     out port y : RealSignal;
-    attribute pyssp_default_start_time : Real = 0.0;
-    attribute pyssp_default_stop_time : Real = 1.0;
+    attribute defaults : SystemDefaults;
     part source : Step;
     part path : PathChoice;
 

@@ -6,18 +6,24 @@ The marker definitions are ordinary SysML definitions in the model package::
     part def Analysis;
     part def FmuModel;
 
-    attribute def Experiment {
+    attribute def DefaultExperiment {
       attribute startTime : Real;
       attribute stopTime : Real;
       attribute stepSize : Real;
-      attribute tolerance : Real;
     }
+    attribute def Experiment :> DefaultExperiment;
 
 A composition is exportable when its ``part def`` specializes ``SspModel``. An
 analysis specializes ``Analysis`` and composes the exported model through a single
 part usage, conventionally named ``sut``. Analyses are never exported as SSPs.
 An FMU component specializes ``FmuModel``; it is the export unit itself, so its
 FMU metadata belongs on that definition.
+
+An experiment is also a typed attribute container: ``attribute defaults : <X>;``
+where ``<X>`` specializes ``DefaultExperiment``. ``startTime`` and ``stopTime``
+are always required. ``stepSize`` is required only when the type specializes
+``Experiment`` (which itself specializes ``DefaultExperiment``); a plain
+``DefaultExperiment`` may omit it.
 
 The functions are usable standalone, and :class:`RolePolicy` bundles them so a
 consumer that owns a different role vocabulary can inject a predicate instead of
@@ -45,6 +51,7 @@ from pycps_sysml2.model import (
 SSP_MODEL_MARKER = "SspModel"
 ANALYSIS_MARKER = "Analysis"
 FMU_MODEL_MARKER = "FmuModel"
+DEFAULT_EXPERIMENT_MARKER = "DefaultExperiment"
 EXPERIMENT_MARKER = "Experiment"
 
 EXPERIMENT_FIELDS = ("startTime", "stopTime", "stepSize")
@@ -52,8 +59,10 @@ EXPERIMENT_FIELDS = ("startTime", "stopTime", "stepSize")
 
 @dataclass(frozen=True)
 class Experiment:
-    """One resolved analysis experiment.
+    """One resolved experiment.
 
+    ``step_size`` is ``None`` when the container specializes only
+    ``DefaultExperiment``; a type specializing ``Experiment`` must set it.
     Tolerance is not part of the experiment: it is a property of the composed
     FMUs and is read from their model descriptions by the simulation stage.
     """
@@ -61,7 +70,7 @@ class Experiment:
     name: str
     start_time: float
     stop_time: float
-    step_size: float
+    step_size: float | None
 
 
 def is_ssp_model(architecture: Architecture, definition: PartDefinition) -> bool:
@@ -80,6 +89,19 @@ def is_experiment_definition(
     architecture: Architecture, definition: AttributeDefinition | None
 ) -> bool:
     return specializes_marker_deep(architecture, definition, EXPERIMENT_MARKER)
+
+
+def is_default_experiment_definition(
+    architecture: Architecture, definition: AttributeDefinition | None
+) -> bool:
+    """True when ``definition`` is ``DefaultExperiment`` or specializes it.
+
+    Transitive, so it also matches ``Experiment`` (which specializes
+    ``DefaultExperiment``) and every concrete experiment container.
+    """
+    return specializes_marker_deep(
+        architecture, definition, DEFAULT_EXPERIMENT_MARKER
+    )
 
 
 def _variation_point(
@@ -186,57 +208,103 @@ def model_usage(
 
 
 def experiment_attribute(
-    architecture: Architecture, analysis: PartDefinition
-) -> tuple[str, Attribute, AttributeDefinition]:
-    """The single experiment attribute declared by an analysis."""
+    architecture: Architecture,
+    part_def: PartDefinition,
+    *,
+    required: bool,
+) -> tuple[str, Attribute, AttributeDefinition] | None:
+    """The single experiment attribute declared by ``part_def``.
+
+    ``required=True`` is the analysis rule: exactly one container. With
+    ``required=False`` an exported part may carry none, but more than one is
+    always rejected.
+    """
     found: list[tuple[str, Attribute, AttributeDefinition]] = []
-    for name, attribute in analysis.attributes.items():
+    for name, attribute in part_def.attributes.items():
         definition = architecture.resolve_attribute_def(attribute)
-        if is_experiment_definition(architecture, definition):
+        if is_experiment_definition(
+            architecture, definition
+        ) or is_default_experiment_definition(architecture, definition):
             assert definition is not None
             found.append((name, attribute, definition))
-    if len(found) != 1:
-        names = ", ".join(name for name, _, _ in found) or "none"
+    if required:
+        if len(found) != 1:
+            names = ", ".join(name for name, _, _ in found) or "none"
+            raise ValueError(
+                f"Analysis '{part_def.name}' must declare exactly one Experiment "
+                f"attribute; found {names}"
+            )
+        return found[0]
+    if len(found) > 1:
+        names = ", ".join(name for name, _, _ in found)
         raise ValueError(
-            f"Analysis '{analysis.name}' must declare exactly one Experiment "
-            f"attribute; found {names}"
+            f"{part_def.name} must declare at most one Experiment attribute; "
+            f"found {names}"
         )
-    return found[0]
+    return found[0] if found else None
 
 
 def read_experiment(
-    architecture: Architecture, analysis: PartDefinition
-) -> Experiment:
-    name, _attribute, definition = experiment_attribute(architecture, analysis)
+    architecture: Architecture,
+    part_def: PartDefinition,
+    *,
+    required: bool,
+) -> Experiment | None:
+    """Read the experiment container on ``part_def``, or ``None`` when absent.
+
+    ``startTime`` and ``stopTime`` are always mandatory and numeric.
+    ``stepSize`` is mandatory only when the container's type specializes
+    ``Experiment``; a plain ``DefaultExperiment`` may omit it, in which case
+    ``Experiment.step_size`` is ``None``. When present it must be positive.
+    """
+    attribute = experiment_attribute(architecture, part_def, required=required)
+    if attribute is None:
+        return None
+    name, _attribute, definition = attribute
     members = effective_members(architecture, definition)
     values: dict[str, float] = {}
-    for field in EXPERIMENT_FIELDS:
-        attribute = members.get(field)
-        if attribute is None or attribute.value is None:
+    for field in ("startTime", "stopTime"):
+        values[field] = _numeric_member(definition, members.get(field), field)
+
+    step_size: float | None = None
+    step_attribute = members.get("stepSize")
+    if is_experiment_definition(architecture, definition):
+        if step_attribute is None or step_attribute.value is None:
             raise ValueError(
-                f"Experiment '{definition.name}.{field}' must have a numeric value"
+                f"Experiment '{definition.name}.stepSize' must have a numeric value"
             )
-        value = attribute.value
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
-            raise ValueError(
-                f"Experiment '{definition.name}.{field}' must be numeric, got "
-                f"{attribute.primitive_type_str()}"
-            )
-        values[field] = float(value)
+    if step_attribute is not None and step_attribute.value is not None:
+        step_size = _numeric_member(definition, step_attribute, "stepSize")
 
     if values["stopTime"] <= values["startTime"]:
         raise ValueError(
             f"Experiment '{definition.name}' stopTime must be greater than startTime"
         )
-    if values["stepSize"] <= 0:
+    if step_size is not None and step_size <= 0:
         raise ValueError(f"Experiment '{definition.name}' stepSize must be positive")
 
     return Experiment(
         name=name,
         start_time=values["startTime"],
         stop_time=values["stopTime"],
-        step_size=values["stepSize"],
+        step_size=step_size,
     )
+
+
+def _numeric_member(
+    definition: AttributeDefinition, attribute: Attribute | None, field: str
+) -> float:
+    if attribute is None or attribute.value is None:
+        raise ValueError(
+            f"Experiment '{definition.name}.{field}' must have a numeric value"
+        )
+    value = attribute.value
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise ValueError(
+            f"Experiment '{definition.name}.{field}' must be numeric, got "
+            f"{attribute.primitive_type_str()}"
+        )
+    return float(value)
 
 
 @dataclass(frozen=True)

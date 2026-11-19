@@ -53,6 +53,7 @@ to read the multiplicity as authored.
 | Date | Change | Reason |
 | --- | --- | --- |
 | 2026-11-03 | Created | Align signal arrays with SysML fixed multiplicity. |
+| 2026-11-19 | Removed the `pyssp_flat_connector` marker from the signal port | The `pyssp_*` vocabulary was removed; flat-connector is an export option |
 
 ## Provenance
 
@@ -60,5 +61,5 @@ Duplicated from `pyssp_sysml2` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml2
 commit `5856b41`, v0.3.0) when the loader and model were extracted. Only
 `ports.sysml` is used here (loader multiplicity and export round trip);
 `mismatch.sysml` is kept with the case as authored because the two documents are
-one contrast pair. `pyssp_flat_connector` in both documents is this dialect's
-control vocabulary, kept as authored.
+one contrast pair. The signal port is a plain typed container in both documents;
+the retired `pyssp_*` vocabulary is not used.

@@ -13,7 +13,6 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2.core.control import ControlAttributes
 from pycps_sysml2.metadata.roles import RolePolicy
 from pycps_sysml2.model import Architecture, load
 from pycps_sysml2.parameters.dialect.composition import (
@@ -28,15 +27,6 @@ from tests.testhelpers import write_model
 PROJECT = Path(__file__).resolve().parents[1]
 SRC = PROJECT / "src" / "pycps_sysml2"
 PARAMETERS = SRC / "parameters"
-
-CONTROL_MODEL = """package Controls {
-  part def Comp {
-    attribute acme_default_start_time = 0.0;
-  }
-  part def System {
-    part comp : Comp;
-  }
-}"""
 
 NESTED_BIND_MODEL = """package Binds {
   port def ParameterInterface;
@@ -87,20 +77,6 @@ def _load(tmp_path: Path, text: str) -> Architecture:
 
 def _stub_analysis(_architecture: Architecture, _definition) -> bool:
     return True
-
-
-def test_a_custom_control_prefix_is_honoured_end_to_end(tmp_path: Path) -> None:
-    """``acme_*`` attributes are control metadata only under an acme policy."""
-    architecture = _load(tmp_path, CONTROL_MODEL)
-    system = architecture.get_part_def("System")
-
-    with pytest.raises(ValueError, match="flat parameter attribute"):
-        validate_parameter_dialect(architecture, system, policy=SSP_POLICY)
-
-    acme = ControlAttributes(prefix="acme_")
-    validate_parameter_dialect(
-        architecture, system, policy=DialectPolicy(control=acme)
-    )
 
 
 def test_a_custom_role_policy_changes_which_nested_bindings_are_rejected(
@@ -201,6 +177,7 @@ def test_the_parameter_package_does_not_reach_for_role_vocabulary() -> None:
         "SSP_MODEL_MARKER",
         "ANALYSIS_MARKER",
         "FMU_MODEL_MARKER",
+        "DEFAULT_EXPERIMENT_MARKER",
         "EXPERIMENT_MARKER",
     }
     role_calls = {"is_ssp_model", "is_analysis", "is_fmu_model"}

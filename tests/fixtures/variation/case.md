@@ -100,6 +100,7 @@ bytes cannot serve both the accepted and the rejected shape.
 | 2026-10-28 | Case record added; documents moved out of the test modules | Test inputs were Python string literals, not reviewable SysML files |
 | 2026-10-30 | Added nested ambiguity, resolution-order, replaced-point, body-check, member-rule, and body-capture documents | The resolver's error paths and ordering were only half covered |
 | 2026-11-05 | Copied into this library, artifact cases dropped | The variation resolver was extracted; SSD, SSP, and analysis generation stayed behind |
+| 2026-11-19 | Replaced default-time and flat-connector attributes with typed experiment containers | The `pyssp_*` vocabulary was removed in 0.3.0 |
 
 ## Provenance
 
@@ -107,5 +108,5 @@ Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`),
 path `tests/fixtures/variation/`. Duplicated rather than referenced because
 this library has no dependency on the SSP toolchain; the model-level
 behaviour is still shared, so the same SysML documents are evidence in both
-repositories. The authored `SspModel` / `pyssp_*` identifiers are this
+repositories. The authored `SspModel` / typed-container identifiers are this
 library's dialect vocabulary, not upstream leakage.

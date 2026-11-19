@@ -11,7 +11,7 @@ status: current
 
 **Owned fixtures.** The generic documents are this repo's: `sysml-model/`,
 `quoted-names/`, `arrays/`, `variation/`, `selection/`, `configuration/`,
-`constraints/`, and the parameter dialect's `parameter-ports/`,
+`constraints/`, `experiment/`, and the parameter dialect's `parameter-ports/`,
 `parameter-bind-orientation/`, `parameter-sets/`. An SSP-output fixture never
 lives here; it lives with the library that emits the artifact.
 

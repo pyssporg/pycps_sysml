@@ -18,8 +18,20 @@ package UsageLevelVariation {
   }
 
   port def RealSignal {
-    attribute pyssp_flat_connector : Boolean = true;
     attribute value : Real;
+  }
+
+  attribute def DefaultExperiment {
+    attribute startTime : Real;
+    attribute stopTime : Real;
+    attribute stepSize : Real;
+  }
+
+  attribute def Experiment :> DefaultExperiment;
+
+  attribute def SystemDefaults :> DefaultExperiment {
+    attribute startTime = 0.0;
+    attribute stopTime = 1.0;
   }
 
   attribute def FmuMetadata {
@@ -65,8 +77,7 @@ package UsageLevelVariation {
   }
 
   part def System :> SspModel {
-    attribute pyssp_default_start_time : Real = 0.0;
-    attribute pyssp_default_stop_time : Real = 1.0;
+    attribute defaults : SystemDefaults;
 
     variation part source : SignalSource {
       variant part stepSource : Step;

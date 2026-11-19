@@ -2,7 +2,7 @@
 id: INFO-003
 type: info
 title: Model and policy
-summary: The IR, the layering rule, and the three policy objects a domain is selected with.
+summary: The IR, the layering rule, and the two policy objects a domain is selected with.
 date: 2026-11-05
 status: current
 ---
@@ -40,20 +40,18 @@ architecture-wide, not per importing file — a deliberate simplification until
 SysML scopes are modelled. Unknown import targets load silently and are left to
 `analyze`.
 
-**Three policy objects.** `RolePolicy` (`metadata/roles.py`) binds the model,
-analysis, FmuModel, and experiment markers to their predicates and default
-implementations. `DialectPolicy` (`parameters/policy.py`) composes a
-`RolePolicy` with a `ControlAttributes`, the SSP and FMI metadata recognizers,
-and the retired-attribute and flat-connector rejections. `ControlAttributes`
-(`core/control.py`) carries the attribute prefix and the retired map, so
-`ControlAttributes(prefix="acme_")` works end to end.
+**Two policy objects.** `RolePolicy` (`metadata/roles.py`) binds the model,
+analysis, and FmuModel markers to their predicates; the same module owns the
+experiment recognizers. `DialectPolicy` (`parameters/policy.py`) composes a
+`RolePolicy` with the SSP/FMI metadata and experiment recognizers plus the
+retired-attribute and flat-connector rejections. `core/control.py` holds the
+single `RETIRED_ATTRIBUTES` map and residual `pyssp_*` catch-all: history, not
+a third policy object.
 
 **Defaults.** Marker names stay exported (`SSP_MODEL_MARKER`,
 `ANALYSIS_MARKER`, `FMU_MODEL_MARKER`, `PARAMETER_INTERFACE_MARKER`,
-`PARAMETER_SET_MARKER`), and
-`SSP_ROLES` / `SSP_POLICY` are the default instances. There is no
-`GENERIC_POLICY`: a non-SSP domain constructs its policy explicitly, because
-implicit domain-neutral behaviour hides which dialect is being read.
+`PARAMETER_SET_MARKER`); `SSP_ROLES`/`SSP_POLICY` are the default instances.
+There is no `GENERIC_POLICY`: a non-SSP domain constructs its policy explicitly.
 
 **Injection.** Public entry points in `parameters/` and `parameters/dialect/`
 take the policy keyword-only and required; private helpers take it positionally

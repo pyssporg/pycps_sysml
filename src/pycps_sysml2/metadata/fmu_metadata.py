@@ -33,7 +33,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from pycps_sysml2.core.control import CONTROL, ControlAttributes
 from pycps_sysml2.core.fmi_helpers import fmu_resource_path
 from pycps_sysml2.metadata.helpers import (
     effective_members,
@@ -371,14 +370,3 @@ def require_fmu_metadata(
                 f"{metadata.implementation!r}, expected {implementation!r}"
             )
     return tuple(problems)
-
-
-def validate_retired_control_attributes(
-    architecture: Architecture, *, attributes: ControlAttributes = CONTROL
-) -> None:
-    """Reject attributes removed by the typed-metadata migration.
-
-    Thin delegate kept for callers of the v0.3.0 metadata surface; the rule and
-    the vocabulary live in :class:`pycps_sysml2.core.control.ControlAttributes`.
-    """
-    attributes.validate(architecture)

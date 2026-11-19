@@ -87,7 +87,6 @@ def _identity_entries(
     application: AppliedSet,
     interface: AttributeDefinition,
     component_name: str,
-    policy: DialectPolicy,
     base_index: int,
 ) -> list[tuple[str, str]]:
     """Expand a whole-object bind into identity mappings."""
@@ -95,8 +94,6 @@ def _identity_entries(
     mapped: set[str] = set()
     entries: list[tuple[str, str]] = []
     for member_name, target in interface.attributes.items():
-        if policy.control.is_control(member_name):
-            continue
         source = set_members.get(member_name)
         if source is None:
             continue
@@ -155,9 +152,7 @@ def mapping_entries(
 
     component_name = application.component_name
     if application.identity:
-        return _identity_entries(
-            application, interface, component_name, policy, base_index
-        )
+        return _identity_entries(application, interface, component_name, base_index)
 
     set_members = application.set_definition.attributes
     entries: list[tuple[str, str]] = []

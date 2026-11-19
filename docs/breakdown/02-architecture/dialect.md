@@ -2,7 +2,7 @@
 id: INFO-002
 type: info
 title: Dialect inventory
-summary: Every marker, control attribute, and variation construct the library owns, and where each lives.
+summary: Every marker, typed attribute container, and variation construct the library owns, and where each lives.
 date: 2026-11-05
 status: current
 ---
@@ -17,14 +17,13 @@ Anything not listed here is language the IR keeps but no marker interprets.
 | `part def SspModel` | part def, empty marker | marker | `metadata/roles.py` |
 | `part def Analysis` | part def, empty marker | marker | `metadata/roles.py` |
 | `part def FmuModel` | part def, empty marker | marker | `metadata/roles.py` |
-| `attribute def Experiment` | attribute def | `startTime`, `stopTime`, `stepSize` Real | `metadata/roles.py` |
+| `attribute def DefaultExperiment` | attribute def | `startTime`, `stopTime`, `stepSize` Real | `metadata/roles.py` |
+| `attribute def Experiment :> DefaultExperiment` | attribute def marker | `stepSize` becomes mandatory for a type specializing it | `metadata/roles.py` |
 | `attribute def SspMetadata` | attribute def | `source` String | `metadata/ssp_metadata.py` |
 | `attribute def FmuMetadata` | attribute def | `source`, `implementation` String | `metadata/fmu_metadata.py` |
 | `port def ParameterInterface` | port def, empty marker | marker | `parameters/dialect/markers.py` |
 | `attribute def ParameterSet` | attribute def, empty marker | marker | `parameters/dialect/markers.py` |
-| `pyssp_default_start_time`, `pyssp_default_stop_time` | composition part def | Real | `core/control.py` |
-| `pyssp_flat_connector` | port def attribute | Boolean, read as truthy | `core/control.py` |
-| `pyssp_implementation`, `pyssp_parameter_set` | retired names | rejection | `core/control.py` |
+| `pyssp_*` names | any attribute | migration error naming the typed-container replacement | `core/control.py` |
 | `variation part def`, `variation attribute def` | definition | `is_variation` | `model/variation.py` |
 | `variant part n : T` or `variant { body }` | variation point | `variants` | `model/variation.py` |
 | `:>> p = T::v` | configuration selection | binding | `parameters/configuration.py` |
@@ -32,9 +31,11 @@ Anything not listed here is language the IR keeps but no marker interprets.
 
 **Ownership boundary.** An implementing library selects a domain by passing
 policy objects, not by re-declaring markers: `RolePolicy` binds the model,
-analysis, FmuModel, and experiment markers and their predicates, `DialectPolicy`
-adds the metadata recognizers plus the retired and flat-connector rejections, and
-`ControlAttributes` carries the prefix and the retired map. Marker names stay
+analysis, and FmuModel markers and their predicates, and `metadata/roles.py`
+also owns the experiment recognizers. `DialectPolicy` adds those recognizers
+plus the metadata recognizers and the retired and flat-connector rejections.
+`core/control.py` holds one retired-tag map and the residual `pyssp_*`
+catch-all; it is migration vocabulary, not a domain policy. Marker names stay
 exported as defaults (`SSP_MODEL_MARKER`, `ANALYSIS_MARKER`,
 `FMU_MODEL_MARKER`, the `Parameter*` names), so a caller that wants the default
 writes nothing; a caller that wants another domain constructs the policy
@@ -48,7 +49,7 @@ calls each one in turn and collects the `ValueError` under a stable check code:
 `require_fmu_metadata` is the one FMU assertion that returns its problems
 instead of raising, so a report can name every leaf component at once.
 
-**Core vocabulary.** The eight markers and metadata schemas in the table ship in
+**Core vocabulary.** The markers and metadata schemas in the table ship in
 one packaged file, `definitions/core.sysml`; a model loads it as one included
 root with `load(model, core_definitions())` instead of declaring the names
 itself (INFO-012).

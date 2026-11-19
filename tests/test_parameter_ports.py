@@ -140,22 +140,6 @@ def test_attribute_marker_is_rejected(tmp_path: Path) -> None:
         validate_marker_definitions(architecture)
 
 
-def test_flat_connector_marker_is_rejected(tmp_path: Path) -> None:
-    """A parameter interface cannot flatten to the port name."""
-    architecture = _load(
-        tmp_path,
-        _model(
-            interface_members=(
-                "attribute pyssp_flat_connector : Boolean = true;\n"
-                "    attribute gain : Real;"
-            ),
-        ),
-    )
-
-    with pytest.raises(ValueError, match="cannot declare"):
-        parameter_interface(architecture, architecture.get_part_def("Comp"))
-
-
 def test_connected_parameter_ports_still_resolve_as_interfaces(
     tmp_path: Path,
 ) -> None:

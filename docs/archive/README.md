@@ -1,4 +1,4 @@
-<!-- GENERATED FILE — do not edit. Regenerate with pb-registers. -->
+<!-- GENERATED FILE — do not edit. Regenerate with `pb registers`. -->
 
 # Decision Stream
 
@@ -20,6 +20,8 @@ Records live in the cold-storage archive; extract one with `pb archive read <ID>
   RolePolicy, DialectPolicy, and ControlAttributes replace hard-coded markers, are keyword-only, and have no generic default.
 - **DEC-004** — Imports gate cross-package visibility · accepted · 2026-11-05 · `DEC-004`
   A qualified definition is visible only if its package is imported; unknown targets stay a loader-untouched concern for analyze.
+- **DEC-005** — Typed containers replace the pyssp_* vocabulary · accepted · 2026-11-19 · `DEC-005`
+  Special data is carried by typed attribute containers; the name-prefixed attributes and the flat-connector model rule are removed.
 
 ### Implementation
 

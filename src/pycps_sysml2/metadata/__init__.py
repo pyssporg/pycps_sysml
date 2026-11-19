@@ -20,10 +20,10 @@ from pycps_sysml2.metadata.fmu_metadata import (
     is_fmu_metadata_definition,
     require_fmu_metadata,
     update_fmu_metadata_from_component,
-    validate_retired_control_attributes,
 )
 from pycps_sysml2.metadata.roles import (
     ANALYSIS_MARKER,
+    DEFAULT_EXPERIMENT_MARKER,
     EXPERIMENT_FIELDS,
     EXPERIMENT_MARKER,
     FMU_MODEL_MARKER,
@@ -35,6 +35,7 @@ from pycps_sysml2.metadata.roles import (
     experiment_attribute,
     exportable_part_definitions,
     is_analysis,
+    is_default_experiment_definition,
     is_experiment_definition,
     is_fmu_model,
     is_ssp_model,
@@ -54,6 +55,7 @@ from pycps_sysml2.metadata.ssp_metadata import (
 
 __all__ = [
     "ANALYSIS_MARKER",
+    "DEFAULT_EXPERIMENT_MARKER",
     "EXPERIMENT_FIELDS",
     "EXPERIMENT_MARKER",
     "FMU_METADATA_ATTR",
@@ -78,6 +80,7 @@ __all__ = [
     "exportable_part_definitions",
     "fmu_metadata",
     "is_analysis",
+    "is_default_experiment_definition",
     "is_experiment_definition",
     "is_fmu_metadata_definition",
     "is_fmu_model",
@@ -89,6 +92,5 @@ __all__ = [
     "require_resolved_variation",
     "ssp_metadata",
     "update_fmu_metadata_from_component",
-    "validate_retired_control_attributes",
     "validate_role_markers",
 ]

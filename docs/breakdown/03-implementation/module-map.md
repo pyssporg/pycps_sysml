@@ -22,7 +22,7 @@ dataclasses, and the validation report.
 | `model/loader.py` | primary-root file walk, one merged parse, IR construction, duplicate rejection | all of `model` |
 | `model/attribution.py` | per-file scan: packages, variation facts, constraint bodies, definition-to-file attribution | `model.parser`, `model.source`, `model.variation`, `model.names` |
 | `definitions/` | the packaged core vocabulary and `core_definitions()` | stdlib |
-| `core/control.py`, `core/fmi_helpers.py` | control attributes with injectable prefix and retired map; FMI helpers | `model` |
+| `core/control.py`, `core/fmi_helpers.py` | the retired `pyssp_*` migration map and residual catch-all; FMI helpers | `model` |
 | `metadata/helpers.py` | the single copy of `short_name`, `specializes_marker`, `effective_members` | `model` |
 | `metadata/roles.py`, `metadata/ssp_metadata.py`, `metadata/fmu_metadata.py` | role policy, SSP metadata, FMI metadata | `model`, `core`, `metadata.helpers` |
 | `parameters/policy.py` | `DialectPolicy` and `SSP_POLICY` | `metadata`, `core` |

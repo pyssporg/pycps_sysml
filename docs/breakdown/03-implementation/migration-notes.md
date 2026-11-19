@@ -12,7 +12,7 @@ status: current
 Provenance: `pyssp_sysml2` v0.3.0 at commit `5856b41`; this is a subset plus a policy seam, not a fork.
 
 **Moved.** `model/*.py` verbatim (only the package name changed);
-`core/control.py` rewritten onto `ControlAttributes` (INFO-003);
+`core/control.py` reduced to the retired-tag migration map after the `pyssp_*` vocabulary was removed in 0.3.0;
 `core/fmi_helpers.py` verbatim; `metadata/{roles,ssp_metadata,fmu_metadata}.py`
 onto one `metadata/helpers.py` with `RolePolicy` added; `parameters/dialect/`
 with SSP and FMI decisions turned into `DialectPolicy` lookups;
@@ -36,5 +36,7 @@ the old root `__init__.py` stay behind; `artifacts/fmi.py` belongs to
 **Behaviour changes.** Policy arguments are required keyword-only with no
 implicit default; a domain-neutral diagnostic that named `SspModel` now says
 "model composition"; `validate_parameter_dialect` consults the injected policy
-instead of module constants. Parsing, IR, resolution, selection, constraints and
+instead of module constants. The `pyssp_*` attribute vocabulary is gone: every
+special datum is a typed container, and a remaining name raises a migration
+error that names its replacement. Parsing, IR, resolution, selection, constraints and
 list expansion (`<name>[<index>]`) are unchanged. Dropped tests: INFO-011.

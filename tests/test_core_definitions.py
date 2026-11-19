@@ -32,6 +32,7 @@ CORE_KEYS = {
         "ParameterSet",
         "FmuMetadata",
         "SspMetadata",
+        "DefaultExperiment",
         "Experiment",
     )
 }
@@ -105,6 +106,7 @@ def test_core_definitions_parses_as_the_core_package() -> None:
         "ParameterSet",
         "FmuMetadata",
         "SspMetadata",
+        "DefaultExperiment",
         "Experiment",
     ]
     assert architecture.included_definitions == set()

@@ -12,6 +12,7 @@ import pytest
 
 from pycps_sysml2.metadata.roles import (
     ANALYSIS_MARKER,
+    DEFAULT_EXPERIMENT_MARKER,
     FMU_MODEL_MARKER,
     SSP_MODEL_MARKER,
     Experiment,
@@ -19,6 +20,7 @@ from pycps_sysml2.metadata.roles import (
     experiment_attribute,
     exportable_part_definitions,
     is_analysis,
+    is_default_experiment_definition,
     is_experiment_definition,
     is_fmu_model,
     is_ssp_model,
@@ -28,6 +30,7 @@ from pycps_sysml2.metadata.roles import (
     validate_role_markers,
 )
 from pycps_sysml2.model import Architecture, load, PartDefinition
+from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 
 
@@ -37,19 +40,6 @@ ROLES = """package Roles {
   part def System :> SspModel;
   part def baseline :> Analysis {
     part sut : System;
-  }
-}"""
-
-EXPERIMENT = """package Exp {
-  attribute def Experiment {
-    attribute startTime : Real = 0.0;
-    attribute stopTime : Real = 1.0;
-    attribute stepSize : Real = 0.001;
-  }
-  attribute def Baseline :> Experiment;
-  part def Analysis;
-  part def baseline :> Analysis {
-    attribute experiment_baseline : Baseline;
   }
 }"""
 
@@ -168,17 +158,21 @@ def test_an_analysis_without_exactly_one_model_part_is_rejected(
 
 
 def test_experiment_is_read_from_the_effective_members(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, EXPERIMENT)
+    architecture = _load(
+        tmp_path, fixture_text("experiment/baseline.sysml")
+    )
     analysis = architecture.get_part_def("baseline")
 
     assert is_experiment_definition(
         architecture, architecture.attribute_definitions["Baseline"]
     )
-    name, _attribute, definition = experiment_attribute(architecture, analysis)
+    name, _attribute, definition = experiment_attribute(
+        architecture, analysis, required=True
+    )
     assert name == "experiment_baseline"
     assert definition.name == "Baseline"
 
-    experiment = read_experiment(architecture, analysis)
+    experiment = read_experiment(architecture, analysis, required=True)
     assert experiment == Experiment(
         name="experiment_baseline",
         start_time=0.0,
@@ -199,7 +193,84 @@ def test_an_analysis_must_declare_exactly_one_experiment_attribute(
     )
 
     with pytest.raises(ValueError, match="exactly one Experiment"):
-        experiment_attribute(architecture, architecture.get_part_def("baseline"))
+        experiment_attribute(
+            architecture, architecture.get_part_def("baseline"), required=True
+        )
+
+
+def test_default_experiment_needs_only_start_and_stop(tmp_path: Path) -> None:
+    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    plant = architecture.get_part_def("Plant")
+
+    assert is_default_experiment_definition(
+        architecture, architecture.attribute_definitions["OnlyDefaults"]
+    )
+    assert not is_experiment_definition(
+        architecture, architecture.attribute_definitions["OnlyDefaults"]
+    )
+
+    experiment = read_experiment(architecture, plant, required=False)
+    assert experiment == Experiment(
+        name="defaults",
+        start_time=0.0,
+        stop_time=2.0,
+        step_size=None,
+    )
+
+
+def test_experiment_is_accepted_on_an_exported_part_and_an_analysis(
+    tmp_path: Path,
+) -> None:
+    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+
+    assert experiment_attribute(
+        architecture, architecture.get_part_def("Plant"), required=False
+    ) is not None
+    assert experiment_attribute(
+        architecture, architecture.get_part_def("baseline"), required=True
+    ) is not None
+
+
+def test_experiment_missing_step_size_is_rejected(tmp_path: Path) -> None:
+    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+
+    with pytest.raises(
+        ValueError, match="Experiment 'MissingStep.stepSize' must have a numeric value"
+    ):
+        read_experiment(
+            architecture, architecture.get_part_def("missing"), required=True
+        )
+
+
+def test_more_than_one_experiment_attribute_is_rejected(tmp_path: Path) -> None:
+    architecture = _load(
+        tmp_path, fixture_text("experiment/multiple.sysml")
+    )
+
+    with pytest.raises(ValueError, match="at most one Experiment attribute"):
+        experiment_attribute(
+            architecture, architecture.get_part_def("Plant"), required=False
+        )
+
+
+def test_an_exported_part_needs_no_experiment_unless_it_is_required(
+    tmp_path: Path,
+) -> None:
+    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    plain = architecture.get_part_def("Plant")
+
+    assert experiment_attribute(architecture, plain, required=False) is not None
+
+    architecture = _load(
+        tmp_path / "plain",
+        """package P {
+  part def SspModel;
+  part def Plain :> SspModel;
+}""",
+    )
+    assert experiment_attribute(
+        architecture, architecture.get_part_def("Plain"), required=False
+    ) is None
 
 
 def test_a_variation_point_blocks_generation_until_it_is_selected(
@@ -223,5 +294,6 @@ def test_a_model_without_a_role_policy_is_still_a_part_definition() -> None:
     assert SSP_MODEL_MARKER == "SspModel"
     assert ANALYSIS_MARKER == "Analysis"
     assert FMU_MODEL_MARKER == "FmuModel"
+    assert DEFAULT_EXPERIMENT_MARKER == "DefaultExperiment"
     assert not is_ssp_model(architecture, architecture.get_part_def("Plain"))
     assert not is_fmu_model(architecture, architecture.get_part_def("Plain"))

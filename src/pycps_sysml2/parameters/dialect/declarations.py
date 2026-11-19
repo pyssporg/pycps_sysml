@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from pycps_sysml2.core.control import FLAT_CONNECTOR_ATTR, is_control_attribute
 from pycps_sysml2.model import (
     Architecture,
     Attribute,
@@ -73,11 +72,6 @@ def parameter_interface(
             f"Parameter port {part_def.name}.{PARAMETERS_PORT_NAME} must be "
             f"undirected or 'in', got '{port_usage.direction}'"
         )
-    if FLAT_CONNECTOR_ATTR in definition.attributes:
-        raise ValueError(
-            f"Parameter interface '{definition.name}' cannot declare "
-            f"'{FLAT_CONNECTOR_ATTR}'; parameter members are emitted by name"
-        )
     return definition
 
 
@@ -93,11 +87,7 @@ def parameter_declarations(
     interface = parameter_interface(architecture, part_def)
     if interface is None:
         return []
-    return [
-        attribute
-        for name, attribute in interface.attributes.items()
-        if not is_control_attribute(name)
-    ]
+    return list(interface.attributes.values())
 
 
 # -- parameter items --------------------------------------------------------

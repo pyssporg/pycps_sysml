@@ -37,8 +37,8 @@ reviewed.
 - `tests/testhelpers.py` — `write_model` (strip and one trailing newline).
 - `tests/test_sysml_model.py` — loader and exporter: one file per case, the
   directory merge rules, every captured field, and the export round trip.
-- `tests/test_control_attributes.py` — the injectable control-attribute
-  vocabulary: default prefix, custom prefix, retired names, injected map.
+- `tests/test_control_attributes.py` — the retired `pyssp_*` names: each
+  replacement hint, the residual catch-all, and no silent skip.
 - `tests/test_validation.py` — the report entry point: one failing fixture per
   check code, the `PASS`/`FAIL` layout, and `raise_for_issues`.
 - `tests/test_layering.py` — no upstream package imports in `src/`, one version

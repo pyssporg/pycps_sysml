@@ -42,18 +42,18 @@ package AttributeSetVariation {
     variant attribute highGain : HighGainScenario;
   }
 
-  attribute def Experiment {
+  attribute def DefaultExperiment {
     attribute startTime : Real;
     attribute stopTime : Real;
     attribute stepSize : Real;
-    attribute tolerance : Real;
   }
+
+  attribute def Experiment :> DefaultExperiment;
 
   attribute def BaselineExperiment :> Experiment {
     attribute startTime = 0.0;
     attribute stopTime = 1.0;
     attribute stepSize = 0.001;
-    attribute tolerance = 0.0001;
   }
 
   part def Step {

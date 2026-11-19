@@ -8,7 +8,9 @@ attributes, or which are typed metadata: those are read from the injected
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
+from pycps_sysml2.core.control import validate_retired_attributes
 from pycps_sysml2.model import (
     Architecture,
     Attribute,
@@ -73,6 +75,17 @@ class MappingSpec:
         return ".".join(self.component_path)
 
 
+class AttributeKind(str, Enum):
+    """What an attribute is, judged by its typed container."""
+
+    FMU_METADATA = "fmu-metadata"
+    SSP_METADATA = "ssp-metadata"
+    PARAMETER_SET = "parameter-set"
+    EXPERIMENT = "experiment"
+    TYPED = "typed"
+    UNTYPED = "untyped"
+
+
 @dataclass(frozen=True)
 class ParameterBind:
     """A parameter bind resolved by role, not by written position.
@@ -112,6 +125,37 @@ class ParameterBind:
             parts += (self.port_member,)
         return ".".join(parts)
 
+
+
+# -- attribute classification ----------------------------------------------
+
+
+def classify_attribute(
+    architecture: Architecture,
+    attribute: Attribute,
+    *,
+    policy: DialectPolicy,
+) -> AttributeKind:
+    """Classify one attribute by the type of its container, never by name.
+
+    The order is the dialect's precedence: FMU metadata, SSP metadata, a
+    parameter set, an experiment container, any other resolved type, then a
+    plain value attribute with no resolved type.
+    """
+    definition = architecture.resolve_attribute_def(attribute)
+    if policy.is_fmu_metadata(architecture, definition):
+        return AttributeKind.FMU_METADATA
+    if policy.is_ssp_metadata(architecture, definition):
+        return AttributeKind.SSP_METADATA
+    if is_parameter_set(definition):
+        return AttributeKind.PARAMETER_SET
+    if policy.is_experiment(
+        architecture, definition
+    ) or policy.is_default_experiment(architecture, definition):
+        return AttributeKind.EXPERIMENT
+    if definition is not None:
+        return AttributeKind.TYPED
+    return AttributeKind.UNTYPED
 
 
 # -- component traversal and applied sets -------------------------------
@@ -256,10 +300,10 @@ def set_usages(
     """Composition attributes whose type is marked ``ParameterSet``."""
     usages: dict[str, Attribute] = {}
     for name, attribute in system.attributes.items():
-        if policy.control.is_control(name):
-            continue
-        definition = architecture.resolve_attribute_def(attribute)
-        if is_parameter_set(definition):
+        if (
+            classify_attribute(architecture, attribute, policy=policy)
+            is AttributeKind.PARAMETER_SET
+        ):
             usages[name] = attribute
     return usages
 
@@ -387,37 +431,44 @@ def _reject_flat_attributes(
     policy: DialectPolicy,
 ) -> None:
     for name, attribute in part_def.attributes.items():
-        if policy.control.is_control(name):
-            continue
-        definition = architecture.resolve_attribute_def(attribute)
-        if policy.is_fmu_metadata(architecture, definition):
-            if part_def.parts:
-                raise ValueError(
-                    f"{part_def.name}.{name} is FMU metadata, but the part has "
-                    "subparts; a nested system cannot also be an FMU component"
-                )
-            policy.record_fmu_metadata(architecture, part_def)
-            continue
-        if policy.is_ssp_metadata(architecture, definition):
-            policy.record_ssp_metadata(architecture, part_def)
-            continue
-        if is_parameter_set(definition):
-            # A model-owned scenario set usage; applied sets are validated by
-            # mapping_specs and the exporting generator.
-            continue
-        if policy.fmu_metadata_attr is not None and name == policy.fmu_metadata_attr:
+        kind = classify_attribute(architecture, attribute, policy=policy)
+        if (
+            policy.fmu_metadata_attr is not None
+            and name == policy.fmu_metadata_attr
+            and kind
+            not in (
+                AttributeKind.FMU_METADATA,
+                AttributeKind.SSP_METADATA,
+                AttributeKind.PARAMETER_SET,
+            )
+        ):
             raise ValueError(
                 f"{part_def.name}.{name} must be typed by an attribute def "
                 "marked ':> FmuMetadata'"
             )
-        if not policy.reject_flat_connectors:
-            continue
-        raise ValueError(
-            f"{part_def.name}.{name} is a flat parameter attribute, which is no "
-            "longer supported. Declare a parameter interface with "
-            f"'in port {PARAMETERS_PORT_NAME} : <Interface>;' and apply a "
-            "ParameterSet with 'bind'."
-        )
+        match kind:
+            case AttributeKind.FMU_METADATA:
+                if part_def.parts:
+                    raise ValueError(
+                        f"{part_def.name}.{name} is FMU metadata, but the part has "
+                        "subparts; a nested system cannot also be an FMU component"
+                    )
+                policy.record_fmu_metadata(architecture, part_def)
+            case AttributeKind.SSP_METADATA:
+                policy.record_ssp_metadata(architecture, part_def)
+            case AttributeKind.PARAMETER_SET | AttributeKind.EXPERIMENT:
+                # Model-owned data, not a flat parameter; applied sets are
+                # validated by mapping_specs and the exporting generator.
+                continue
+            case AttributeKind.UNTYPED:
+                if not policy.reject_flat_connectors:
+                    continue
+                raise ValueError(
+                    f"{part_def.name}.{name} is a flat parameter attribute, which is "
+                    "no longer supported. Declare a parameter interface with "
+                    f"'in port {PARAMETERS_PORT_NAME} : <Interface>;' and apply a "
+                    "ParameterSet with 'bind'."
+                )
 
 
 def validate_parameter_dialect(
@@ -426,45 +477,44 @@ def validate_parameter_dialect(
     """Reject retired flat parameters and unsupported model attributes.
 
     Parameters must come from a parameter interface. The composition may carry
-    control attributes and parameter-set usages, but no flat parameters.
+    typed attribute containers (metadata, parameter sets, experiments), but no
+    flat parameters.
     """
     if policy.reject_retired_attributes:
-        policy.control.validate(architecture)
+        validate_retired_attributes(architecture)
 
     for part_def in component_definitions(architecture, system):
         _reject_flat_attributes(architecture, part_def, policy)
 
     for name, attribute in system.attributes.items():
-        if policy.control.is_control(name):
-            continue
-        definition = architecture.resolve_attribute_def(attribute)
-        if policy.is_fmu_metadata(architecture, definition):
-            if not policy.roles.is_fmu_model(architecture, system):
+        match classify_attribute(architecture, attribute, policy=policy):
+            case AttributeKind.FMU_METADATA:
+                if not policy.roles.is_fmu_model(architecture, system):
+                    raise ValueError(
+                        f"{system.name}.{name} is FMU metadata, but the composition "
+                        "is not an FMU component"
+                    )
+                if system.parts:
+                    raise ValueError(
+                        f"{system.name}.{name} is FMU metadata, but the part has "
+                        "subparts; a nested system cannot also be an FMU component"
+                    )
+            case AttributeKind.SSP_METADATA:
+                if policy.roles.is_analysis(architecture, system):
+                    raise ValueError(
+                        f"{system.name}.{name} is SSP metadata; declare it on the "
+                        "model composition"
+                    )
+            case AttributeKind.UNTYPED:
+                if not policy.reject_flat_connectors:
+                    continue
                 raise ValueError(
-                    f"{system.name}.{name} is FMU metadata, but the composition is "
-                    "not an FMU component"
+                    f"{system.name}.{name} is a flat parameter attribute, which is "
+                    "no longer supported. Define parameter sets inside SysML and "
+                    "bind them to component usages."
                 )
-            if system.parts:
-                raise ValueError(
-                    f"{system.name}.{name} is FMU metadata, but the part has "
-                    "subparts; a nested system cannot also be an FMU component"
-                )
-            continue
-        if policy.is_ssp_metadata(architecture, definition) and policy.roles.is_analysis(
-            architecture, system
-        ):
-            raise ValueError(
-                f"{system.name}.{name} is SSP metadata; declare it on the "
-                "model composition"
-            )
-        if definition is not None:
-            # Set usages (and other value attributes) are resolved by the
-            # parameter/bind validation, which reports role errors precisely.
-            continue
-        if not policy.reject_flat_connectors:
-            continue
-        raise ValueError(
-            f"{system.name}.{name} is a flat parameter attribute, which is no "
-            "longer supported. Define parameter sets inside SysML and bind them "
-            "to component usages."
-        )
+            case _:
+                # Set usages, experiment containers, and other value attributes
+                # are resolved by the parameter/bind validation, which reports
+                # role errors precisely.
+                continue

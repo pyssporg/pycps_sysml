@@ -34,12 +34,14 @@ answers it the same way for the SSP and the FMI domain.
   violated, or invalid after constraint evaluation.
 - **Constraints.** `evaluate` and `enforce_constraints` run `assert`
   expressions over a resolved architecture and return a report.
-- **Dialect.** Marker names are exported defaults; `RolePolicy`,
-  `DialectPolicy`, and `ControlAttributes` select the domain (INFO-003). SSP
-  metadata, FMU metadata, experiments, parameter interfaces and sets, and the
-  `pyssp_*` control attributes are all readable through this package.
+- **Dialect.** Marker names are exported defaults; `RolePolicy` and
+  `DialectPolicy` select the domain (INFO-003). SSP metadata, FMU metadata,
+  experiments (`DefaultExperiment`/`Experiment`), parameter interfaces and
+  sets, and every other typed attribute container are readable through this
+  package. The removed `pyssp_*` names fail with a migration hint.
 - **Validation.** `validate(architecture, composition=None, ...)` runs the
-  role, marker, control, parameter, and FMU checks as one `ValidationReport`
+  role, marker, retired-attribute, parameter, and FMU checks as one
+  `ValidationReport`
   with stable codes; `require_fmu_metadata` returns per-component problems
   without raising. A report renders one `PASS` per check and one `FAIL` per
   issue.
