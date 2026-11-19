@@ -259,15 +259,32 @@ def test_experiment_is_accepted_on_an_exported_part_and_an_analysis(
     ) is not None
 
 
-def test_experiment_missing_step_size_is_rejected(tmp_path: Path) -> None:
+def test_experiment_without_a_step_size_reads_as_none(tmp_path: Path) -> None:
     architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
 
-    with pytest.raises(
-        ValueError, match="Experiment 'MissingStep.stepSize' must have a numeric value"
-    ):
-        read_experiment(
-            architecture, architecture.get_part_def("missing"), required=True
-        )
+    experiment = read_experiment(
+        architecture, architecture.get_part_def("unset_step"), required=True
+    )
+    assert experiment == Experiment(
+        name="defaults",
+        start_time=0.0,
+        stop_time=2.0,
+        step_size=None,
+    )
+
+
+def test_default_experiment_may_author_a_step_size(tmp_path: Path) -> None:
+    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+
+    experiment = read_experiment(
+        architecture, architecture.get_part_def("with_step"), required=True
+    )
+    assert experiment == Experiment(
+        name="defaults",
+        start_time=0.0,
+        stop_time=2.0,
+        step_size=0.5,
+    )
 
 
 def test_more_than_one_experiment_attribute_is_rejected(tmp_path: Path) -> None:

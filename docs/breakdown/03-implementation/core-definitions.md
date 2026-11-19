@@ -23,9 +23,24 @@ declared usage typed by the schema itself still raises "schema directly", a
 same-name concrete usage shadows the slot, and any other concrete name is
 accepted. No new core key carries this: the slots reuse the two schemas already
 in the package.
-`DefaultExperiment` carries `startTime`, `stopTime`, `stepSize`, and
-`tolerance`; no field authors a numeric default, so an unset value stays unset.
-`tolerance` is optional and must be positive when present.
+`FmuMetadata` carries `implementation : String`, validated against the closed SSP
+set `any`, `ModelExchange`, `CoSimulation`, `ScheduledExecution`.
+`DefaultExperiment` mirrors `ssd:DefaultExperiment` and carries `startTime` and
+`stopTime`; `Experiment` specializes it and adds the FMI
+`fmi2:DefaultExperiment` fields `stepSize` and `tolerance`. `startTime` and
+`stopTime` are required and numeric; `stepSize` and `tolerance` are optional,
+positive when authored, and author no numeric default, so an unset value stays
+unset. Exporters project by
+disposition: the FMI model-description exporter copies every authored field,
+while the SSD exporter copies only `startTime` and `stopTime` and intentionally
+drops `stepSize` and `tolerance`. A local vocabulary may redeclare its own
+`DefaultExperiment` with all four fields; the reader stays permissive.
+
+Generated and tooling fields stay out of the vocabulary: on the FMI side
+`fmiVersion`, `modelName`, `guid`, `generationTool`, `generationDateAndTime`,
+`variableNamingConvention`, `valueReference`, `numberOfEventIndicators`, and
+the `ModelStructure` indices; on the SSP side `version`, `name`, `fileversion`,
+`id`, geometry, `GraphicalElements`, and `Signature`.
 
 - **Package data:** `pyproject.toml` lists `definitions/*.sysml`, so the wheel
   carries the file; `core_definitions()` returns it as a real `Path` and

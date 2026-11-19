@@ -128,6 +128,11 @@ def test_metadata_and_experiment_inherit_from_their_core_bases() -> None:
         )
         assert members.attributes["source"].type_name == "String"
 
+    defaults = effective_members(
+        architecture, architecture.get_attribute_def("DefaultExperiment")
+    )
+    assert set(defaults.attributes) == {"startTime", "stopTime"}
+
     experiment = effective_members(
         architecture, architecture.get_attribute_def("Experiment")
     )

@@ -28,6 +28,8 @@ Records live in the cold-storage archive; extract one with `pb archive read <ID>
   FmuMetadata and SspMetadata share SourcedMetadata, and DefaultExperiment carries an optional, positive FMI tolerance with no numeric defaults.
 - **DEC-008** — Role markers own a canonical metadata slot · accepted · 2026-11-19 · `DEC-008`
   SspModel and FmuModel declare canonical metadata slots; an inherited unfilled slot means no metadata, while a locally used schema stays rejected.
+- **DEC-009** — Experiment splits by standard disposition · accepted · 2026-11-19 · `DEC-009`
+  DefaultExperiment mirrors the SSP element, Experiment adds the FMI fields, exporters project by disposition, and implementation is a closed SSP enum.
 
 ### Implementation
 

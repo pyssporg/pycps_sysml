@@ -7,6 +7,7 @@ stream.
 
 | Date | ID | Decision | Layers | Status | Record |
 |---|---|---|---|---|---|
+| 2026-11-19 | DEC-009 | Experiment splits by standard disposition | architecture, implementation | accepted | `DEC-009` |
 | 2026-11-19 | DEC-008 | Role markers own a canonical metadata slot | architecture, implementation | accepted | `DEC-008` |
 | 2026-11-19 | DEC-007 | Sourced metadata base and optional experiment tolerance | architecture, implementation | accepted | `DEC-007` |
 | 2026-11-19 | DEC-006 | Inheritance resolves on demand in the model layer | architecture, implementation | accepted | `DEC-006` |

@@ -20,12 +20,15 @@ Metadata is recognized by **type**, not by the usage name: the part attribute
 must be typed by an ``attribute def`` that specializes ``FmuMetadata``. At most
 one such attribute is allowed per part definition.
 
-``source`` is the build artifact path (a ``.fmu`` file or an extracted FMU
-directory). It is authoring data and is never recovered from an SSD. A part
-definition without ``source`` has no FMU yet: its SSD component is exported
-with an empty ``source``. ``implementation`` maps to
-``ssd:Component/@implementation``; the FMU resource name is always derived
-from the part definition name.
+``source`` and ``implementation`` are ``ssd:Component/@source`` and
+``@implementation`` (SSP 2.0.1), not ``fmiModelDescription`` fields:
+``FmuMetadata`` describes an FMI model packaged as an SSP component. ``source``
+is the build artifact path (a ``.fmu`` file or an extracted FMU directory). It
+is authoring data and is never recovered from an SSD. A part definition without
+``source`` has no FMU yet: its SSD component is exported with an empty
+``source``. ``implementation`` is one of the
+``ssd:Component/@implementation`` enumeration values; the FMU resource name is
+always derived from the part definition name.
 """
 
 from __future__ import annotations
@@ -50,6 +53,14 @@ from pycps_sysml2.model import (
 FMU_METADATA_ATTR = "fmu_meta"
 FMU_METADATA_MARKER = "FmuMetadata"
 FMU_METADATA_FIELDS = ("source", "implementation")
+
+#: Allowed ``ssd:Component/@implementation`` values (SSP 2.0.1).
+FMU_IMPLEMENTATION_VALUES = (
+    "any",
+    "ModelExchange",
+    "CoSimulation",
+    "ScheduledExecution",
+)
 
 
 @dataclass(frozen=True)
@@ -134,6 +145,19 @@ def _string_member(name: str, attribute: Attribute | None) -> str | None:
     return value
 
 
+def _implementation_member(
+    part_def: PartDefinition, attribute: Attribute | None
+) -> str | None:
+    value = _string_member("implementation", attribute)
+    if value is not None and value not in FMU_IMPLEMENTATION_VALUES:
+        raise ValueError(
+            f"{part_def.name} implementation {value!r} is not an "
+            "ssd:Component/@implementation value; allowed values are "
+            f"{', '.join(FMU_IMPLEMENTATION_VALUES)}"
+        )
+    return value
+
+
 def fmu_metadata(
     architecture: Architecture, part_def: PartDefinition
 ) -> FmuMetadata | None:
@@ -167,8 +191,8 @@ def fmu_metadata(
 
     return FmuMetadata(
         source=_string_member("source", members.attributes.get("source")),
-        implementation=_string_member(
-            "implementation", members.attributes.get("implementation")
+        implementation=_implementation_member(
+            part_def, members.attributes.get("implementation")
         ),
     )
 

@@ -9,10 +9,11 @@ The marker definitions are ordinary SysML definitions in the model package::
     attribute def DefaultExperiment {
       attribute startTime : Real;
       attribute stopTime : Real;
+    }
+    attribute def Experiment :> DefaultExperiment {
       attribute stepSize : Real;
       attribute tolerance : Real;
     }
-    attribute def Experiment :> DefaultExperiment;
 
 A composition is exportable when its ``part def`` specializes ``SspModel``. An
 analysis specializes ``Analysis`` and composes the exported model through a single
@@ -21,12 +22,14 @@ An FMU component specializes ``FmuModel``; it is the export unit itself, so its
 FMU metadata belongs on that definition.
 
 An experiment is also a typed attribute container: ``attribute defaults : <X>;``
-where ``<X>`` specializes ``DefaultExperiment``. ``startTime`` and ``stopTime``
-are always required. ``stepSize`` is required only when the type specializes
-``Experiment`` (which itself specializes ``DefaultExperiment``); a plain
-``DefaultExperiment`` may omit it. ``tolerance`` is the FMI 2.0 default
-experiment tolerance and is optional everywhere; when present it must be
-positive.
+where ``<X>`` specializes ``DefaultExperiment``. ``DefaultExperiment`` mirrors
+``ssd:DefaultExperiment`` (SSP 2.0.1) and carries ``startTime`` and
+``stopTime``, both required. ``Experiment`` mirrors ``fmi2:DefaultExperiment``
+and adds the optional ``stepSize`` and ``tolerance``; all four FMI attributes
+are optional in the FMI 2.0.5 XSD, so a missing ``stepSize`` reads as ``None``
+exactly like a missing ``tolerance``. The FMI exporter copies every authored
+field; the SSD exporter copies only ``startTime`` and ``stopTime``. When
+present, ``stepSize`` and ``tolerance`` must be positive.
 
 The functions are usable standalone, and :class:`RolePolicy` bundles them so a
 consumer that owns a different role vocabulary can inject a predicate instead of
@@ -64,10 +67,12 @@ EXPERIMENT_FIELDS = ("startTime", "stopTime", "stepSize", "tolerance")
 class Experiment:
     """One resolved experiment.
 
-    ``step_size`` is ``None`` when the container specializes only
-    ``DefaultExperiment``; a type specializing ``Experiment`` must set it.
-    ``tolerance`` is the optional FMI 2.0 default-experiment tolerance: ``None``
-    means it was not authored, so the composed model description supplies it.
+    ``DefaultExperiment`` mirrors ``ssd:DefaultExperiment`` (SSP 2.0.1):
+    ``start_time`` and ``stop_time``. ``Experiment`` mirrors
+    ``fmi2:DefaultExperiment`` and adds ``step_size`` and ``tolerance``; all
+    four FMI attributes are optional in the FMI 2.0.5 XSD, so a missing one is
+    ``None``. The FMI exporter copies every authored field; the SSD exporter
+    copies only ``start_time`` and ``stop_time``.
     """
 
     name: str
@@ -256,12 +261,14 @@ def read_experiment(
 ) -> Experiment | None:
     """Read the experiment container on ``part_def``, or ``None`` when absent.
 
-    ``startTime`` and ``stopTime`` are always mandatory and numeric.
-    ``stepSize`` is mandatory only when the container's type specializes
-    ``Experiment``; a plain ``DefaultExperiment`` may omit it, in which case
-    ``Experiment.step_size`` is ``None``. When present it must be positive.
-    ``tolerance`` is optional, read through the same effective-member view, and
-    must be positive when authored; ``None`` means it was not authored.
+    ``DefaultExperiment`` mirrors ``ssd:DefaultExperiment`` (SSP 2.0.1) and
+    ``Experiment`` mirrors ``fmi2:DefaultExperiment``. ``startTime`` and
+    ``stopTime`` are mandatory and numeric. ``stepSize`` and ``tolerance`` are
+    optional FMI 2.0.5 attributes: a missing one yields ``None``. Extra members
+    authored on a ``DefaultExperiment`` container are still read, so a local
+    four-field vocabulary keeps working. When present, ``stepSize`` and
+    ``tolerance`` must be positive. The FMI exporter copies every authored
+    field; the SSD exporter copies only ``startTime`` and ``stopTime``.
     """
     attribute = experiment_attribute(architecture, part_def, required=required)
     if attribute is None:
@@ -276,11 +283,6 @@ def read_experiment(
 
     step_size: float | None = None
     step_attribute = members.attributes.get("stepSize")
-    if is_experiment_definition(architecture, definition):
-        if step_attribute is None or step_attribute.value is None:
-            raise ValueError(
-                f"Experiment '{definition.name}.stepSize' must have a numeric value"
-            )
     if step_attribute is not None and step_attribute.value is not None:
         step_size = _numeric_member(definition, step_attribute, "stepSize")
 

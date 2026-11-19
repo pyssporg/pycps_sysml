@@ -11,9 +11,15 @@ package ExperimentDefaults {
     attribute stopTime = 2.0;
   }
 
-  attribute def MissingStep :> Experiment {
+  attribute def UnsetStep :> Experiment {
     attribute startTime = 0.0;
     attribute stopTime = 2.0;
+  }
+
+  attribute def ExplicitStep :> DefaultExperiment {
+    attribute startTime = 0.0;
+    attribute stopTime = 2.0;
+    attribute stepSize = 0.5;
   }
 
   part def SspModel;
@@ -28,7 +34,11 @@ package ExperimentDefaults {
     attribute defaults : OnlyDefaults;
   }
 
-  part def missing :> Analysis {
-    attribute defaults : MissingStep;
+  part def unset_step :> Analysis {
+    attribute defaults : UnsetStep;
+  }
+
+  part def with_step :> Analysis {
+    attribute defaults : ExplicitStep;
   }
 }

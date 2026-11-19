@@ -183,6 +183,51 @@ def test_non_string_metadata_value_is_rejected(tmp_path: Path) -> None:
         fmu_metadata(architecture, architecture.get_part_def("Comp"))
 
 
+def test_implementation_accepts_the_ssp_enumeration(tmp_path: Path) -> None:
+    architecture = _load(
+        tmp_path,
+        _metadata_model(
+            concrete="""
+            attribute def CompFmu :> FmuMetadata {
+              attribute source = "build/fmus/Comp.fmu";
+              attribute implementation = "ScheduledExecution";
+            }
+            """,
+        ),
+    )
+
+    metadata = fmu_metadata(architecture, architecture.get_part_def("Comp"))
+
+    assert metadata is not None
+    assert metadata.implementation == "ScheduledExecution"
+
+
+def test_implementation_outside_the_ssp_enumeration_is_rejected(
+    tmp_path: Path,
+) -> None:
+    architecture = _load(
+        tmp_path,
+        _metadata_model(
+            concrete="""
+            attribute def CompFmu :> FmuMetadata {
+              attribute source = "build/fmus/Comp.fmu";
+              attribute implementation = "Fmu";
+            }
+            """,
+        ),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Comp implementation 'Fmu' is not an ssd:Component/"
+            "@implementation value; allowed values are any, ModelExchange, "
+            "CoSimulation, ScheduledExecution"
+        ),
+    ):
+        fmu_metadata(architecture, architecture.get_part_def("Comp"))
+
+
 def test_duplicate_metadata_attributes_are_rejected(tmp_path: Path) -> None:
     architecture = _load(
         tmp_path,
