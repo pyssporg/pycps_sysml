@@ -49,8 +49,10 @@ canonical map, `parse_selection`, then constraint statuses and
 usage-level variants with a nested variation point.
 `05-configuration-and-plans` covers `:>>` configuration, `derived_selection`,
 and analysis plans. `06-design-space-limits` enumerates two design points and
-shows a typed cross-point constraint limiting the combinations, a configuration
-pinning `:>>` values, and an incomplete selection refused. `07-parameter-dialect`
+shows a typed cross-point constraint limiting the combinations; configurations
+pinning only `source` derive `gain` from the constraint, the unconstrained root
+is refused as ambiguous, and a fully pinned illegal pair is left for the plan
+to report. `07-parameter-dialect`
 covers parameter ports, sets, bind orientation, and `mapping_specs`. `08-validation-report`
 turns `validate` into one report with `format()`, `ok`, and `raise_for_issues()`.
 `09-packages-and-export` follows qualified names across packages, imports, and

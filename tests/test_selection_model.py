@@ -478,3 +478,61 @@ def test_a_plan_marks_a_resolution_failure_invalid_and_keeps_the_selection(
     ) in (plan.detail or "")
 
 
+@pytest.mark.parametrize(
+    ("analysis", "expected"),
+    [
+        ("step_derived", {"source": "step", "gain": "two"}),
+        ("sine_derived", {"source": "sine", "gain": "single"}),
+    ],
+)
+def test_derived_selection_infers_the_only_valid_completion(
+    tmp_path: Path, analysis: str, expected: dict[str, str]
+) -> None:
+    architecture = _load_text(
+        tmp_path, fixture_text("design-space/design-space.sysml")
+    )
+
+    assert derived_selection(architecture, analysis, roles=SSP_ROLES) == expected
+
+
+def test_derived_selection_rejects_an_ambiguous_inference(tmp_path: Path) -> None:
+    architecture = _load_text(
+        tmp_path, fixture_text("design-space/design-space.sysml")
+    )
+
+    with pytest.raises(ValueError) as raised:
+        derived_selection(architecture, "unconstrained", roles=SSP_ROLES)
+
+    message = str(raised.value)
+    assert "variation point 'SourceChoice' at 'source' is not selected" in message
+    assert "6 assignments satisfy the asserted constraints" in message
+
+
+def test_derived_selection_rejects_a_contradictory_inference(
+    tmp_path: Path,
+) -> None:
+    architecture = _load_text(
+        tmp_path, fixture_text("design-space/design-space.sysml")
+    )
+
+    with pytest.raises(ValueError) as raised:
+        derived_selection(architecture, "contradictory", roles=SSP_ROLES)
+
+    message = str(raised.value)
+    assert "variation point 'GainChoice' at 'gain' is not selected" in message
+    assert "no assignment satisfies the asserted constraints" in message
+
+
+def test_derived_selection_returns_a_fully_pinned_illegal_pair(
+    tmp_path: Path,
+) -> None:
+    architecture = _load_text(
+        tmp_path, fixture_text("design-space/design-space.sysml")
+    )
+
+    assert derived_selection(architecture, "pinned_illegal", roles=SSP_ROLES) == {
+        "source": "sine",
+        "gain": "two",
+    }
+
+

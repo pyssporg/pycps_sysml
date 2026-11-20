@@ -42,8 +42,25 @@ package Plant {
   }
 
   // A pure selection: a derived configuration pins the points with :>>.
-  part def StepTwoSystem :> System {
+  part def StepSystem :> System {
     part :>> source = SourceChoice::step;
-    part :>> gain = GainChoice::two;
+  }
+
+  part def SineSystem :> System {
+    part :>> source = SourceChoice::sine;
+  }
+
+  // Analyses expose the configurations to derived selection.
+  part def step :> Analysis {
+    part sut : StepSystem;
+  }
+
+  part def sine :> Analysis {
+    part sut : SineSystem;
+  }
+
+  // Composes the root itself, leaving both points open.
+  part def system :> Analysis {
+    part sut : System;
   }
 }

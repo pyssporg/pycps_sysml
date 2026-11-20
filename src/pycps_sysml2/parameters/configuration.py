@@ -14,14 +14,16 @@ effective members, descends into a selected variant's type for nested points,
 and returns the canonical ``{"usage path": "variant"}`` map that
 :func:`pycps_sysml2.parameters.variation.resolve_selected` consumes.
 
-Every reachable variation point must be bound. An unbound point is an error,
-never a silently unselected artifact.
+A point left unbound is inferred from the family's asserted constraints only
+when exactly one completion is valid. Zero or several valid completions is
+still an error, never a silently unselected or arbitrary artifact.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from itertools import product
 
 from pycps_sysml2.metadata import RolePolicy
 from pycps_sysml2.model import (
@@ -33,6 +35,7 @@ from pycps_sysml2.model import (
     VariantBody,
     VariantMember,
 )
+from pycps_sysml2.parameters.constraints import evaluate
 
 __all__ = [
     "configuration_name",
@@ -270,37 +273,90 @@ def derived_selection(
 
     Keys are relative to the composed model (``path``, ``path.inner_stage``) or
     bare for an analysis-local usage (``scenario``). Raises ``ValueError`` when a
-    binding does not name a variation point or a point stays unselected.
+    binding does not name a variation point, or when the unbound points do not
+    have exactly one constraint-valid completion.
     """
     definition = _definition(architecture, analysis)
     composed = roles.model_usage(architecture, definition)[1]
     chain = _specialization_chain(architecture, composed, roles)
     where = f"configuration '{composed.name}'"
-    selection: dict[str, str] = {}
 
     bindings: dict[str, _Binding] = {}
     for configuration in chain[1:]:
         label = f"configuration '{configuration.name}'"
         bindings.update(_bindings(configuration, configuration.parts, label))
-    _apply(architecture, chain[0], bindings, selection, "", where)
+    solutions, first_unbound = _expand(
+        architecture, chain[0], bindings, {}, "", where, infer=True
+    )
+    if first_unbound is None:
+        selection = solutions[0]
+    else:
+        from pycps_sysml2.parameters.variation import resolve_selected
 
+        valid: list[dict[str, str]] = []
+        seen: set[tuple[tuple[str, str], ...]] = set()
+        for candidate in solutions:
+            try:
+                resolved, canonical = resolve_selected(
+                    architecture, chain[0], candidate, roles=roles
+                )
+            except ValueError:
+                continue
+            report = evaluate(resolved, chain[0].name, canonical)
+            if report.failed or report.invalid:
+                continue
+            marker = tuple(sorted(candidate.items()))
+            if marker in seen:
+                continue
+            seen.add(marker)
+            valid.append(candidate)
+        if len(valid) == 1:
+            selection = valid[0]
+        else:
+            key, point, at = first_unbound
+            base = (
+                f"variation point '{point.variation}' at '{key}' is not "
+                f"selected; bind it in {at}"
+            )
+            if valid:
+                raise ValueError(
+                    f"{base}; {len(valid)} assignments satisfy the asserted "
+                    f"constraints in {at}"
+                )
+            raise ValueError(
+                f"{base}; no assignment satisfies the asserted constraints in "
+                f"{at}"
+            )
+
+    local_where = f"analysis '{definition.name}'"
+    local: dict[str, _Binding] = {}
     for name, point in _points(architecture, definition).items():
         usage = definition.parts.get(name) or definition.attributes[name]
-        binding = _Binding(usage, definition.parts, f"analysis '{definition.name}'")
-        _select(architecture, point, binding, name, selection)
-    return selection
+        local[name] = _Binding(usage, definition.parts, local_where)
+    states, _ = _expand(
+        architecture, definition, local, selection, "", local_where, infer=False
+    )
+    return states[0]
 
 
-def _apply(
+def _expand(
     architecture: Architecture,
     scope: PartDefinition,
     bindings: Mapping[str, _Binding],
     selection: dict[str, str],
     prefix: str,
     where: str,
-) -> None:
-    """Bind *scope*'s points and require every one of them to be selected."""
+    *,
+    infer: bool,
+) -> tuple[list[dict[str, str]], tuple[str, _Point, str] | None]:
+    """Bind *scope*'s points, fanning out over inferred completions.
+
+    Returns every resulting selection and the first point left unbound in
+    depth-first order, if any, so the caller can name it in an error.
+    """
     points = _points(architecture, scope)
+    states = [dict(selection)]
+    first_unbound: tuple[str, _Point, str] | None = None
     for target, binding in bindings.items():
         point = points.get(target)
         if point is None:
@@ -308,45 +364,99 @@ def _apply(
                 f"redefinition target '{target}' in {where} is not a variation "
                 f"point in '{scope.name}'"
             )
-        _select(architecture, point, binding, prefix + target, selection)
-    for name, point in points.items():
-        key = prefix + name
-        if key not in selection:
+        key = prefix + target
+        if not binding.usage.value:
             raise ValueError(
                 f"variation point '{point.variation}' at '{key}' is not "
-                f"selected; bind it in {where}"
+                f"selected; bind it in {binding.where}"
             )
+        variant, body = _resolve(architecture, point, binding, key)
+        expanded: list[dict[str, str]] = []
+        for state in states:
+            entered, nested_unbound = _enter(
+                architecture,
+                point,
+                variant,
+                body,
+                binding.local_parts,
+                key,
+                state,
+                binding.where,
+                infer,
+            )
+            expanded.extend(entered)
+            if first_unbound is None:
+                first_unbound = nested_unbound
+        states = expanded
 
-
-def _select(
-    architecture: Architecture,
-    point: _Point,
-    binding: _Binding,
-    key: str,
-    selection: dict[str, str],
-) -> None:
-    """Record one binding and descend into the selected variant's type."""
-    usage = binding.usage
-    if not usage.value:
+    unbound = [
+        (prefix + name, point)
+        for name, point in points.items()
+        if prefix + name not in states[0]
+    ]
+    if not unbound:
+        return states, first_unbound
+    if not infer:
+        key, point = unbound[0]
         raise ValueError(
             f"variation point '{point.variation}' at '{key}' is not selected; "
-            f"bind it in {binding.where}"
+            f"bind it in {where}"
         )
-    variant = _resolve(architecture, point, binding, key)
-    for existing in [item for item in selection if item == key or item.startswith(key + ".")]:
-        del selection[existing]
-    selection[key] = variant[0].name
+    if first_unbound is None:
+        key, point = unbound[0]
+        first_unbound = (key, point, where)
 
-    variant_member, body = variant
-    if point.kind != "part" or variant_member.type_name is None:
-        return
-    nested = architecture.resolve_part(variant_member.type_name)
+    expanded = []
+    for variants in product(*(point.variants for _, point in unbound)):
+        branch = states
+        for (key, point), variant in zip(unbound, variants):
+            next_states: list[dict[str, str]] = []
+            for state in branch:
+                entered, _ = _enter(
+                    architecture,
+                    point,
+                    variant,
+                    None,
+                    {},
+                    key,
+                    state,
+                    where,
+                    infer,
+                )
+                next_states.extend(entered)
+            branch = next_states
+        expanded.extend(branch)
+    return expanded, first_unbound
+
+
+def _enter(
+    architecture: Architecture,
+    point: _Point,
+    variant: VariantMember,
+    body: VariantBody | None,
+    local_parts: Mapping[str, PartUsage],
+    key: str,
+    selection: dict[str, str],
+    where: str,
+    infer: bool,
+) -> tuple[list[dict[str, str]], tuple[str, _Point, str] | None]:
+    """Record one selected variant and descend into its type."""
+    state = dict(selection)
+    for existing in [
+        item for item in state if item == key or item.startswith(key + ".")
+    ]:
+        del state[existing]
+    state[key] = variant.name
+
+    if point.kind != "part" or variant.type_name is None:
+        return [state], None
+    nested = architecture.resolve_part(variant.type_name)
     if nested is None:
-        return
+        return [state], None
     inner: dict[str, _Binding] = {}
     if body is not None:
-        inner = _bindings(body, {**binding.local_parts, **body.parts}, binding.where)
-    _apply(architecture, nested, inner, selection, key + ".", binding.where)
+        inner = _bindings(body, {**local_parts, **body.parts}, where)
+    return _expand(architecture, nested, inner, state, key + ".", where, infer=infer)
 
 
 def _resolve(

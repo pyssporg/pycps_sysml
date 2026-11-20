@@ -32,9 +32,11 @@ answers it the same way for the SSP and the FMI domain.
 - **Variation.** Definition, usage, attribute, and body variation points are
   captured; `resolve` and `resolve_selected` substitute one selection and
   return the canonical path map.
-- **Selection.** `derived_selection` reads the bindings of a configuration,
-  and `analysis_selections`/`analysis_plans` classify each analysis as legal,
-  violated, or invalid after constraint evaluation.
+- **Selection.** `derived_selection` reads the bindings of a configuration and
+  infers a point left unbound from the family's asserted constraints when
+  exactly one completion is valid; zero or several valid completions are
+  refused. `analysis_selections`/`analysis_plans` classify each analysis as
+  legal, violated, or invalid after constraint evaluation.
 - **Constraints.** `evaluate` and `enforce_constraints` run `assert`
   expressions over a resolved architecture and return a report.
 - **Dialect.** Marker names are exported defaults; `RolePolicy` and

@@ -1,6 +1,6 @@
 # Example 06: Limiting the design space
 
-The design space is the product of the variation points, so two points with two variants each give four complete assignments. One constraint definition carries typed parameters and a combined cross-point restriction: `sine implies single` and `step implies two`, so only the two diagonal pairs survive. The driver enumerates the product in declaration order, resolves each complete assignment, and lets `evaluate` report per-assignment status as `legal` or the failed constraint. A pure selection pins a point structurally: `StepTwoSystem :> System` redefines `source` and `gain` with `:>>`, and the inherited constraint evaluates legal on that configuration. A constraint cannot stand in for a binding: with only `source` bound, `evaluate` marks it `invalid` (`no selection for 'gain' bound to 'chosenGain'`) instead of inferring the variant the implication allows, which is why the configuration binds both points. Pin points on a derived definition, not in a body on a plain part usage, and note that deriving a selection map from a configuration needs an `Analysis` (example 05). A selection must be complete, so leaving a point open is refused instead of exported with an unresolved type.
+The design space is the product of the variation points, so two points with two variants each give four complete assignments. One constraint definition carries typed parameters and a combined cross-point restriction: `sine implies single` and `step implies two`, so only the two diagonal pairs survive. The driver enumerates the product in declaration order, resolves each complete assignment, and lets `evaluate` report per-assignment status as `legal` or the failed constraint. A configuration need not pin every point: `StepSystem :> System` redefines only `source`, and derivation infers `gain` from the family's asserted constraint when exactly one completion is valid; `SineSystem` does the same for the other diagonal. A configuration that leaves several completions valid, such as composing the root `System` itself, is refused as ambiguous rather than exporting an arbitrary choice. Pin points on a derived definition, not in a body on a plain part usage, and note that deriving a selection map from a configuration needs an `Analysis` (example 05). A fully pinned illegal pair is still returned by derivation and reported `violated` by the analysis plan.
 
 ## Run
 
@@ -18,8 +18,7 @@ source=sine gain=single: legal -
 source=sine gain=two: violated sourceDeterminesGain
 legal: 2 of 4
 allowed: step+two, sine+single
-pinned: StepTwoSystem source=SourceChoice::step gain=GainChoice::two
-pinned evaluation: legal
-unbound: sourceDeterminesGain invalid no selection for 'gain' bound to 'chosenGain'
-partial: ValueError: Variation point 'GainChoice' at 'gain' in composition 'System' is not selected; pass gain=<variant>.
+derived: StepSystem source=step gain=two (legal)
+derived: SineSystem source=sine gain=single (legal)
+ambiguous: ValueError: variation point 'SourceChoice' at 'source' is not selected; bind it in configuration 'System'; 2 assignments satisfy the asserted constraints in configuration 'System'
 ```
