@@ -172,6 +172,20 @@ def _part_definition_lines(part_def: PartDefinition) -> list[str]:
     suffix = ""
     if part_def.specializes:
         suffix = f" :> {', '.join(_qualified_name(target) for target in part_def.specializes)}"
+    if not any(
+        (
+            part_def.doc,
+            part_def.attributes,
+            part_def.ports,
+            part_def.parts,
+            part_def.connections,
+            part_def.bindings,
+            part_def.constraints,
+        )
+    ):
+        return [
+            f"{_DEFINITION_INDENT}part def {quote_name(part_def.name)}{suffix};"
+        ]
     lines = [f"{_DEFINITION_INDENT}part def {quote_name(part_def.name)}{suffix} {{"]
     if part_def.doc:
         lines.extend(_doc_line(part_def.doc, _MEMBER_INDENT))

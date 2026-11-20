@@ -42,6 +42,7 @@ from pycps_sysml2.metadata.helpers import (
     short_name,
     specializes_marker_deep,
 )
+from pycps_sysml2.metadata.roles import FMU_MODEL_MARKER, is_fmu_model
 from pycps_sysml2.model import (
     Architecture,
     Attribute,
@@ -234,6 +235,24 @@ def ensure_fmu_metadata_definition(
     return definition
 
 
+def ensure_fmu_model_definition(
+    architecture: Architecture, source_file: str
+) -> PartDefinition:
+    """Create the shared ``FmuModel`` role marker when it is missing."""
+    existing = architecture.resolve_part(FMU_MODEL_MARKER)
+    if existing is not None:
+        return existing
+    if architecture.has_definition(architecture.port_definitions, FMU_MODEL_MARKER):
+        raise ValueError(
+            f"'{FMU_MODEL_MARKER}' is defined as a port def, but an FMU model is "
+            "marked by a part def"
+        )
+
+    definition = PartDefinition(name=FMU_MODEL_MARKER, source_file=source_file)
+    architecture.add_part_def(definition)
+    return definition
+
+
 def _unique_definition_name(architecture: Architecture, base: str) -> str:
     candidate = base
     counter = 2
@@ -330,6 +349,15 @@ def _clone_metadata_definition(
     return clone
 
 
+def _mark_fmu_model(part_def: PartDefinition) -> None:
+    """Append the role marker, keeping every existing supertype in order."""
+    if any(
+        short_name(name) == FMU_MODEL_MARKER for name in part_def.specializes
+    ):
+        return
+    part_def.specializes = (*part_def.specializes, FMU_MODEL_MARKER)
+
+
 def update_fmu_metadata_from_component(
     architecture: Architecture,
     part_def: PartDefinition,
@@ -340,7 +368,8 @@ def update_fmu_metadata_from_component(
     """Reconcile ``implementation`` with an SSD component.
 
     ``source`` is authoring data and is preserved. No metadata is created when
-    the component carries no implementation.
+    the component carries no implementation. A definition that ends up with
+    ``fmu_meta`` is marked ``FmuModel`` and the marker is declared locally.
     """
     implementation = getattr(component, "implementation", None)
 
@@ -353,6 +382,8 @@ def update_fmu_metadata_from_component(
                 implementation=implementation,
                 source_file=source_file,
             )
+            _mark_fmu_model(part_def)
+            ensure_fmu_model_definition(architecture, source_file)
         return
 
     usage_name, _attribute, definition = usage
@@ -375,6 +406,39 @@ def update_fmu_metadata_from_component(
         architecture.attribute_definitions.pop(
             architecture.stored_key(definition), None
         )
+        return
+
+    _mark_fmu_model(part_def)
+    ensure_fmu_model_definition(architecture, source_file)
+
+
+def validate_fmu_metadata_marker(
+    architecture: Architecture, *, path: str | None = None
+) -> None:
+    """Reject a locally declared ``fmu_meta`` on a definition without ``FmuModel``.
+
+    A part definition that authors FMU metadata is an export unit, so it must
+    explicitly specialize ``FmuModel``. The inherited, unfilled core slot is not
+    a local declaration and does not trigger the rule; an unauthored
+    ``FmuModel`` stays valid.
+    """
+    offenders = sorted(
+        part_def.name
+        for part_def in architecture.part_definitions.values()
+        if FMU_METADATA_ATTR in part_def.attributes
+        and not is_fmu_model(architecture, part_def)
+    )
+    if not offenders:
+        return
+    prefix = f"{path}: " if path is not None else ""
+    raise ValueError(
+        "\n".join(
+            f"{prefix}{name} declares {FMU_METADATA_ATTR} but does not specialize "
+            f"{FMU_MODEL_MARKER}; author "
+            f"'part def {name} :> {FMU_MODEL_MARKER}'"
+            for name in offenders
+        )
+    )
 
 
 def require_fmu_metadata(

@@ -108,8 +108,10 @@ report.raise_for_issues()       # ValueError with every message; no-op when ok
 
 `validate` starts from the SSP vocabulary and takes `roles=` and `policy=` to
 override it. A composition root enables the parameter check and narrows the FMU
-check to its component definitions; without one, every leaf part definition
-except the role markers is checked.
+metadata check to its component definitions; without one, every leaf part
+definition except the role markers is checked. The `fmu-marker` check also
+requires any definition that locally declares `fmu_meta` to specialize
+`FmuModel`.
 
 ## Multi-root loading and core definitions
 

@@ -30,6 +30,8 @@ Records live in the cold-storage archive; extract one with `pb archive read <ID>
   SspModel and FmuModel declare canonical metadata slots; an inherited unfilled slot means no metadata, while a locally used schema stays rejected.
 - **DEC-009** — Experiment splits by standard disposition · accepted · 2026-11-19 · `DEC-009`
   DefaultExperiment mirrors the SSP element, Experiment adds the FMI fields, exporters project by disposition, and implementation is a closed SSP enum.
+- **DEC-010** — A local fmu_meta requires the FmuModel marker · accepted · 2026-11-20 · `DEC-010`
+  A part definition that locally declares fmu_meta must specialize FmuModel, and the dialect reports every offender under the fmu-marker check.
 
 ### Implementation
 

@@ -2,7 +2,9 @@ package MarkerUser {
   private import ScalarValues::*;
   private import PysspCore::*;
 
-  part def System :> SspModel {
+  part def System :> SspModel;
+
+  part def Ball :> FmuModel {
     attribute fmu_meta : BallFmu;
   }
 

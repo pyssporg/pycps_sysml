@@ -17,6 +17,7 @@ All paths are relative to this directory.
 | `retired-control.sysml` | A part attribute uses the retired `pyssp_implementation` |
 | `missing-fmu-meta.sysml` | A leaf part definition has no FMU metadata |
 | `wrong-fmu-meta.sysml` | `fmu_meta` is typed by a definition that is not marked `FmuMetadata` |
+| `fmu-marker.sysml` | A part definition declares `fmu_meta` without specializing `FmuModel` |
 | `implementation-mismatch.sysml` | Metadata says `ModelExchange` where `CoSimulation` is required |
 | `parameter-dialect.sysml` | A component has a flat parameter attribute |
 
@@ -34,6 +35,7 @@ instead of raising.
 | Date | Change | Reason |
 | --- | --- | --- |
 | 2026-11-17 | Case record and eight documents added | The report entry point needs one reviewable failing shape per check |
+| 2026-11-20 | Added `fmu-marker.sysml` | The FMU marker rule now rejects a local `fmu_meta` without `FmuModel` |
 
 ## Provenance
 

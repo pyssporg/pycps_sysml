@@ -11,8 +11,17 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import ValidationIssue, ValidationReport, validate
-from pycps_sysml2.metadata import require_fmu_metadata
+from pycps_sysml2 import (
+    ValidationIssue,
+    ValidationReport,
+    core_definitions,
+    validate,
+)
+from pycps_sysml2.metadata import (
+    is_fmu_model,
+    require_fmu_metadata,
+    validate_fmu_metadata_marker,
+)
 from pycps_sysml2.model import Architecture, load
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
@@ -25,6 +34,7 @@ CHECKS = (
     "specialization",
     "parameter-dialect",
     "fmu-metadata",
+    "fmu-marker",
 )
 
 
@@ -34,6 +44,12 @@ def _load(tmp_path: Path, case: str) -> Architecture:
         architecture_dir / "model.sysml",
         fixture_text(f"validation/{case}"),
     )
+    return load(architecture_dir)
+
+
+def _load_fixture(tmp_path: Path, relative: str) -> Architecture:
+    architecture_dir = tmp_path / "fixture"
+    write_model(architecture_dir / "model.sysml", fixture_text(relative))
     return load(architecture_dir)
 
 
@@ -103,6 +119,41 @@ def test_a_wrong_fmu_meta_type_is_reported(tmp_path: Path) -> None:
 
     assert _codes(report) == ["fmu-metadata"]
     assert "must be typed" in report.issues[0].message
+
+
+def test_a_local_fmu_meta_without_the_marker_is_reported(tmp_path: Path) -> None:
+    report = validate(_load(tmp_path, "fmu-marker.sysml"))
+
+    assert _codes(report) == ["fmu-marker"]
+    assert report.issues[0].message == (
+        "Component declares fmu_meta but does not specialize FmuModel; "
+        "author 'part def Component :> FmuModel'"
+    )
+
+
+def test_fmu_marker_names_the_unmarked_part_and_accepts_marked_ones(
+    tmp_path: Path,
+) -> None:
+    architecture = _load_fixture(tmp_path, "fmu-model/component.sysml")
+
+    with pytest.raises(ValueError) as excinfo:
+        validate_fmu_metadata_marker(architecture)
+
+    message = str(excinfo.value)
+    assert (
+        "Unmarked declares fmu_meta but does not specialize FmuModel; "
+        "author 'part def Unmarked :> FmuModel'"
+    ) in message
+    assert "Comp declares" not in message
+    assert "Nested declares" not in message
+
+
+def test_the_core_fmu_model_marker_is_not_an_offender() -> None:
+    architecture = load(core_definitions())
+    marker = architecture.get_part_def("FmuModel")
+
+    assert is_fmu_model(architecture, marker)
+    validate_fmu_metadata_marker(architecture)
 
 
 def test_an_implementation_mismatch_is_reported(tmp_path: Path) -> None:

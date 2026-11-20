@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   external artifact; `FmuMetadata` and `SspMetadata` inherit `source` from it.
 - The optional FMI 2.0 `DefaultExperiment.tolerance`; `read_experiment` reads it
   from the effective-member view and rejects a non-positive value.
+- The `fmu-marker` validation check: a part definition that locally declares
+  `fmu_meta` must specialize `FmuModel`; the inherited unfilled core slot is
+  not a local declaration.
 
 ### Changed
 

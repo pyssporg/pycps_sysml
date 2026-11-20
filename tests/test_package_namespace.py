@@ -95,7 +95,7 @@ def test_export_emits_the_primary_package_only() -> None:
     assert files["model.sysml"].count("package Fixed {") == 1
     assert files["extra.sysml"].count("package Fixed {") == 1
     assert "package Alpha" not in "".join(files.values())
-    assert "part def Same {" in files["model.sysml"]
+    assert "part def Same;" in files["model.sysml"]
 
 
 def test_qualified_configuration_value_resolves_the_type() -> None:

@@ -46,6 +46,7 @@ CORE_KEYS = {
 COMMON_DEFINITIONS = """
 package CommonVocab {
   part def SspModel;
+  part def FmuModel;
   port def ParameterInterface;
 
   attribute def FmuMetadata {
@@ -168,11 +169,14 @@ def test_load_without_includes_leaves_markers_unresolved(tmp_path) -> None:
 
     system = architecture.get_part_def("System")
     assert system.specializes == ("SspModel",)
+    ball = architecture.get_part_def("Ball")
+    assert ball.specializes == ("FmuModel",)
     assert "SspModel" not in architecture.part_definitions
+    assert "FmuModel" not in architecture.part_definitions
     assert architecture.resolve_attribute_def("FmuMetadata") is None
     assert architecture.included_definitions == set()
 
-    with pytest.raises(ValueError, match="Role marker 'SspModel'"):
+    with pytest.raises(ValueError, match="Role marker 'FmuModel'"):
         validate_role_markers(architecture)
     with pytest.raises(ValueError, match="missing marker definition"):
         validate_marker_definitions(architecture)
@@ -184,7 +188,7 @@ def test_load_with_include_resolves_core_markers(tmp_path) -> None:
     validate_role_markers(architecture)
     validate_marker_definitions(architecture)
 
-    metadata = fmu_metadata(architecture, architecture.get_part_def("System"))
+    metadata = fmu_metadata(architecture, architecture.get_part_def("Ball"))
     assert metadata is not None
     assert metadata.source == "models/fmu/Ball/fmu"
     assert metadata.implementation == "CoSimulation"
@@ -225,11 +229,13 @@ def test_included_root_package_name_need_not_match(tmp_path) -> None:
     assert architecture.package_name == "MarkerUser"
     assert architecture.included_definitions == {
         "CommonVocab::SspModel",
+        "CommonVocab::FmuModel",
         "CommonVocab::ParameterInterface",
         "CommonVocab::FmuMetadata",
     }
     validate_role_markers(architecture)
     assert architecture.get_part_def("System").specializes == ("SspModel",)
+    assert architecture.get_part_def("Ball").specializes == ("FmuModel",)
 
 
 def test_locally_declared_marker_is_a_duplicate_error(tmp_path) -> None:

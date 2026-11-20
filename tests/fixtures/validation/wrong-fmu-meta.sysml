@@ -2,7 +2,8 @@ package Validation {
   attribute def NotFmu {
     attribute source : String;
   }
-  part def Component {
+  part def FmuModel;
+  part def Component :> FmuModel {
     attribute fmu_meta : NotFmu;
   }
 }

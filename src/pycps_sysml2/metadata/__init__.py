@@ -20,6 +20,7 @@ from pycps_sysml2.metadata.fmu_metadata import (
     is_fmu_metadata_definition,
     require_fmu_metadata,
     update_fmu_metadata_from_component,
+    validate_fmu_metadata_marker,
 )
 from pycps_sysml2.metadata.roles import (
     ANALYSIS_MARKER,
@@ -92,5 +93,6 @@ __all__ = [
     "require_resolved_variation",
     "ssp_metadata",
     "update_fmu_metadata_from_component",
+    "validate_fmu_metadata_marker",
     "validate_role_markers",
 ]

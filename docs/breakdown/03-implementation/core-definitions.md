@@ -21,8 +21,10 @@ reads as "no metadata": both `_metadata_usage` helpers skip it, so the accessor
 returns `None` and `require_fmu_metadata` reports "no FMU metadata". A locally
 declared usage typed by the schema itself still raises "schema directly", a
 same-name concrete usage shadows the slot, and any other concrete name is
-accepted. No new core key carries this: the slots reuse the two schemas already
-in the package.
+accepted. A part definition that locally declares `fmu_meta` must explicitly
+specialize `FmuModel`; the marker definition itself satisfies the rule, and the
+inherited unfilled slot is not a local declaration. No new core key carries
+this: the slots reuse the two schemas already in the package.
 `FmuMetadata` carries `implementation : String`, validated against the closed SSP
 set `any`, `ModelExchange`, `CoSimulation`, `ScheduledExecution`.
 `DefaultExperiment` mirrors `ssd:DefaultExperiment` and carries `startTime` and

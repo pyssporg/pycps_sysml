@@ -59,11 +59,13 @@ calls each one in turn and collects the `ValueError` under a stable check code:
 `role-markers`, `marker-kinds`, `retired-control-attributes`,
 `parameter-dialect` (when a composition root is given), `specialization`
 (cyclic specialization, incompatible redefinition, usage-kind mismatch
-collected by `analyze_semantics`), and `fmu-metadata` (which also rejects an
+collected by `analyze_semantics`), `fmu-metadata` (which also rejects an
 `implementation` outside the closed SSP set
-`any|ModelExchange|CoSimulation|ScheduledExecution`). An undefined supertype
-and a definition-kind mismatch are not reported, because the pinned analyzer
-emits no code for them.
+`any|ModelExchange|CoSimulation|ScheduledExecution`), and `fmu-marker` (a
+part definition that locally declares `fmu_meta` must specialize `FmuModel`;
+the inherited unfilled core slot is not a local declaration). An undefined
+supertype and a definition-kind mismatch are not reported, because the pinned
+analyzer emits no code for them.
 `require_fmu_metadata` is the one FMU assertion that returns its problems
 instead of raising, so a report can name every leaf component at once.
 

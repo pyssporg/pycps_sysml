@@ -7,7 +7,8 @@ package Validation {
     attribute source = "build/fmus/Component.fmu";
     attribute implementation = "ModelExchange";
   }
-  part def Component {
+  part def FmuModel;
+  part def Component :> FmuModel {
     attribute fmu_meta : ComponentFmu;
   }
 }

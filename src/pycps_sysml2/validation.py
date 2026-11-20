@@ -16,7 +16,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from pycps_sysml2.core.control import validate_retired_attributes
-from pycps_sysml2.metadata.fmu_metadata import require_fmu_metadata
+from pycps_sysml2.metadata.fmu_metadata import (
+    require_fmu_metadata,
+    validate_fmu_metadata_marker,
+)
 from pycps_sysml2.metadata.helpers import short_name
 from pycps_sysml2.metadata.roles import (
     SSP_ROLES,
@@ -167,5 +170,6 @@ def validate(
             issues.append(ValidationIssue(code="fmu-metadata", message=problem))
 
     run("fmu-metadata", check_fmu_metadata)
+    run("fmu-marker", lambda: validate_fmu_metadata_marker(architecture))
 
     return ValidationReport(checks=tuple(checks), issues=tuple(issues))

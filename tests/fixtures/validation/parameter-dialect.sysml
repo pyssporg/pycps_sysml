@@ -8,7 +8,8 @@ package Validation {
   part def System {
     part component : Component;
   }
-  part def Component {
+  part def FmuModel;
+  part def Component :> FmuModel {
     attribute fmu_meta : ComponentFmu;
     attribute gain : Real = 1.0;
   }
