@@ -28,7 +28,7 @@ carries no level or a level the map does not declare, so a new test file cannot
 arrive undeclared. `slow` never appears in the map: it is a time marker applied
 to individual tests.
 
-**Gate.** CI runs `ruff check src tests`, then `python -m pytest -m "not slow"`
+**Gate.** CI runs `ruff check src tests examples`, then `python -m pytest -m "not slow"`
 on Python 3.11 and 3.12, and fails if the run leaves the checkout dirty. A bare
 `python -m pytest` runs the whole set, `slow` included.
 

@@ -25,7 +25,7 @@ script: v0.1.0 ships the Python API only.
 Before a change lands:
 
 ```bash
-ruff check src tests
+ruff check src tests examples
 python -m pytest -m "not slow"
 python -m build            # wheel + sdist, optional but cheap
 ```

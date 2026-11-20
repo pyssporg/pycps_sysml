@@ -28,7 +28,13 @@ from fixture_guard import check as check_fixtures
 from fixture_guard import snapshot
 
 #: Directories whose committed contents a test run must never rewrite.
-GUARDED_ROOTS = (Path(__file__).resolve().parent / "fixtures",)
+#: ``examples`` is guarded because its READMEs are the oracle of
+#: ``test_examples.py``: an example that regenerates its own expected output
+#: would otherwise pass by rewriting the evidence.
+GUARDED_ROOTS = (
+    Path(__file__).resolve().parent / "fixtures",
+    Path(__file__).resolve().parents[1] / "examples",
+)
 
 #: Registered level markers, broadest last.
 LEVEL_MARKERS = ("static", "unit", "component", "contract", "system")
@@ -40,6 +46,7 @@ FILE_LEVELS: dict[str, tuple[str, ...]] = {
     "test_constraints_roundtrip.py": ("contract",),
     "test_control_attributes.py": ("unit",),
     "test_core_definitions.py": ("unit", "component"),
+    "test_examples.py": ("system",),
     "test_fixture_policy.py": ("static",),
     "test_inheritance.py": ("unit",),
     "test_inherited_consumers.py": ("unit",),

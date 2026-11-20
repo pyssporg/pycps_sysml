@@ -49,6 +49,10 @@ reviewed.
   directory has a `case.md`, every record carries the required headings and
   names every fixture file, no test module embeds a document of 15+ lines, and
   no fixture is read through the cwd.
+- `tests/test_examples.py` — every `examples/<case>/run.py` runs from a
+  temporary cwd, and its stdout is compared to the single ```` ```text ````
+  block in that case's README; each case also needs its three files and an
+  entry in `examples/README.md`.
 
 ## Adding a fixture case
 
@@ -63,12 +67,12 @@ reviewed.
 
 ## The fixture-write guard
 
-`tests/fixture_guard.py` hashes every file under `tests/fixtures` at session
-start and re-hashes it at session finish (`pytest_sessionstart` /
-`pytest_sessionfinish` in `conftest.py`). A test that adds, removes, or rewrites
-a committed fixture fails the session and the changed paths are printed, even
-when every assertion passed. Bytecode caches (`__pycache__`, `*.pyc`) are
-ignored.
+`tests/fixture_guard.py` hashes every file under `tests/fixtures` and
+`examples/` at session start and re-hashes it at session finish
+(`pytest_sessionstart` / `pytest_sessionfinish` in `conftest.py`). A test that
+adds, removes, or rewrites a committed fixture or example fails the session and
+the changed paths are printed, even when every assertion passed. Bytecode caches
+(`__pycache__`, `*.pyc`) are ignored.
 
 A run that legitimately writes fixtures (`UPDATE_FIXTURES=1`) skips the guard.
 If you find yourself wanting to disable it for anything else, the test is

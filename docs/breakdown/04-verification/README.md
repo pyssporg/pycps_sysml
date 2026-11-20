@@ -15,4 +15,5 @@ must record.
 - **INFO-011** [Test port record](test-port-record.md) — Which pyssp_sysml2 tests were dropped or split when the suite moved.
 - **TEST-001** [Test strategy](test-strategy.md) — Six levels, one marker per test, and the default CI gate that runs everything but slow.
 - **TEST-002** [Fixture policy](fixture-policy.md) — Which fixture directories this repo owns, why part of the set duplicates an implementer, and what every case.md records.
+- **TEST-003** [Examples](examples.md) — What the runnable examples tree is for, its three-file layout, the README stdout oracle, and why it ships in no package.
 <!-- pb:index:end -->

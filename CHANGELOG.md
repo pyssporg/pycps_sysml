@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The repo-only `examples/` tree: runnable worked examples, one directory per
+  task with `model.sysml`, `run.py`, and a `README.md` whose single `text` fence
+  is the expected stdout. `tests/test_examples.py` executes every `run.py` from
+  a temporary cwd and fails a stale README.
 - Part-definition inheritance: `PartDefinition`, `PortDefinition`, and
   `AttributeDefinition` carry `specializes`, and `model/effective.py` resolves
   ancestors on demand, so inherited parts, ports, attributes, connections, and

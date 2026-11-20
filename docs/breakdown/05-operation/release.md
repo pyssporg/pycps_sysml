@@ -18,7 +18,7 @@ status: current
 
 1. Set `__version__ = "0.1.0"` in `src/pycps_sysml2/__init__.py` and regenerate
    the registers if the version appears in prose.
-2. Run the gate: `ruff check src tests`, `python -m pytest -m "not slow"`,
+2. Run the gate: `ruff check src tests examples`, `python -m pytest -m "not slow"`,
    `python -m build --wheel --sdist`.
 3. Commit as `release: v0.1.0`, then `git tag v0.1.0` and
    `git push origin main --tags`.

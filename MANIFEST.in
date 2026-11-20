@@ -1,1 +1,4 @@
 recursive-include src/pycps_sysml2/definitions *.sysml
+
+# Examples are developer documentation; never ship them.
+prune examples

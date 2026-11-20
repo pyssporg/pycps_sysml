@@ -1,26 +1,26 @@
 package PysspCore {
-  part def SspModel {
-    attribute ssp_meta : SspMetadata;
-  }
-  part def Analysis;
-  part def FmuModel {
-    attribute fmu_meta : FmuMetadata;
-  }
-
-  port def ParameterInterface;
-
-  attribute def ParameterSet;
-
+  
   // Shared base for containers that name an external artifact.
   attribute def SourcedMetadata {
     attribute source : String;
   }
-
+  
   attribute def FmuMetadata :> SourcedMetadata {
     attribute implementation : String;
   }
-
+  
   attribute def SspMetadata :> SourcedMetadata;
+  
+  part def Analysis;
+  port def ParameterInterface;
+  attribute def ParameterSet;
+  
+  part def SspModel {
+    attribute ssp_meta : SspMetadata;
+  }
+  part def FmuModel {
+    attribute fmu_meta : FmuMetadata;
+  }
 
   // ssd:DefaultExperiment (SSP 2.0.1): only startTime and stopTime.
   attribute def DefaultExperiment {

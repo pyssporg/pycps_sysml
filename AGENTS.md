@@ -92,5 +92,5 @@ none.
   `pip install -e ".[dev]"`.
 - Tests: `python3 -m pytest -m "not slow"` (the CI gate); a bare
   `python3 -m pytest` includes the slow set.
-- Lint: `ruff check src tests`.
+- Lint: `ruff check src tests examples`.
 - Build: `python -m build --wheel --sdist`.

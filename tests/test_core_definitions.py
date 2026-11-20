@@ -16,6 +16,8 @@ from pycps_sysml2.definitions import CORE_FILE
 from pycps_sysml2.metadata import (
     EXPERIMENT_FIELDS,
     fmu_metadata,
+    ssp_metadata,
+    validate_fmu_metadata_marker,
     validate_role_markers,
 )
 from pycps_sysml2.model import effective_members
@@ -47,6 +49,7 @@ COMMON_DEFINITIONS = """
 package CommonVocab {
   part def SspModel;
   part def FmuModel;
+  part def Analysis;
   port def ParameterInterface;
 
   attribute def FmuMetadata {
@@ -103,19 +106,21 @@ def test_core_definitions_parses_as_the_core_package() -> None:
     architecture = load(core_definitions())
 
     assert architecture.package_name == "PysspCore"
-    assert list(architecture.part_definitions) == [
-        "SspModel",
+    # Membership, not declaration order: core.sysml may be regrouped without
+    # turning a documentation edit into a test failure.
+    assert sorted(architecture.part_definitions) == [
         "Analysis",
         "FmuModel",
+        "SspModel",
     ]
-    assert list(architecture.port_definitions) == ["ParameterInterface"]
-    assert list(architecture.attribute_definitions) == [
-        "ParameterSet",
-        "SourcedMetadata",
-        "FmuMetadata",
-        "SspMetadata",
+    assert sorted(architecture.port_definitions) == ["ParameterInterface"]
+    assert sorted(architecture.attribute_definitions) == [
         "DefaultExperiment",
         "Experiment",
+        "FmuMetadata",
+        "ParameterSet",
+        "SourcedMetadata",
+        "SspMetadata",
     ]
     assert architecture.included_definitions == set()
 
@@ -176,7 +181,7 @@ def test_load_without_includes_leaves_markers_unresolved(tmp_path) -> None:
     assert architecture.resolve_attribute_def("FmuMetadata") is None
     assert architecture.included_definitions == set()
 
-    with pytest.raises(ValueError, match="Role marker 'FmuModel'"):
+    with pytest.raises(ValueError, match="Role marker 'Analysis'"):
         validate_role_markers(architecture)
     with pytest.raises(ValueError, match="missing marker definition"):
         validate_marker_definitions(architecture)
@@ -193,6 +198,79 @@ def test_load_with_include_resolves_core_markers(tmp_path) -> None:
     assert metadata.source == "models/fmu/Ball/fmu"
     assert metadata.implementation == "CoSimulation"
     assert architecture.included_definitions == CORE_KEYS
+
+
+def test_marker_specializers_inherit_the_core_metadata_slot(tmp_path) -> None:
+    architecture = load(_marker_user(tmp_path), core_definitions())
+
+    slots = {
+        "System": ("ssp_meta", "SspMetadata"),
+        "UnconfiguredBall": ("fmu_meta", "FmuMetadata"),
+    }
+    for part_name, (slot_name, type_name) in slots.items():
+        part_def = architecture.get_part_def(part_name)
+        attribute = effective_members(architecture, part_def).attributes[slot_name]
+        definition = architecture.resolve_attribute_def(attribute)
+
+        assert attribute.type_name == type_name
+        assert definition is not None
+        assert definition.package == CORE_PACKAGE
+        assert architecture.stored_key(definition) == f"{CORE_PACKAGE}::{type_name}"
+
+
+def test_inherited_slot_is_not_a_declared_member(tmp_path) -> None:
+    architecture = load(_marker_user(tmp_path), core_definitions())
+
+    slots = {
+        "System": ("ssp_meta", "SspMetadata"),
+        "UnconfiguredBall": ("fmu_meta", "FmuMetadata"),
+    }
+    for part_name, (slot_name, type_name) in slots.items():
+        part_def = architecture.get_part_def(part_name)
+        inherited = effective_members(architecture, part_def).attributes
+
+        assert part_def.attributes == {}
+        assert slot_name not in part_def.attributes
+        assert set(inherited) == {slot_name}
+        assert inherited[slot_name].type_name == type_name
+
+
+def test_inherited_metadata_slots_read_as_no_metadata(tmp_path) -> None:
+    architecture = load(_marker_user(tmp_path), core_definitions())
+
+    assert ssp_metadata(architecture, architecture.get_part_def("System")) is None
+    assert (
+        fmu_metadata(architecture, architecture.get_part_def("UnconfiguredBall"))
+        is None
+    )
+
+    legacy = ssp_metadata(architecture, architecture.get_part_def("LegacySystem"))
+    assert legacy is not None
+    assert legacy.source == "models/ssp/legacy"
+
+    ball = fmu_metadata(architecture, architecture.get_part_def("Ball"))
+    assert ball is not None
+    assert ball.source == "models/fmu/Ball/fmu"
+
+
+def test_validate_fmu_marker_accepts_the_inherited_slot(tmp_path) -> None:
+    architecture = load(_marker_user(tmp_path), core_definitions())
+
+    validate_fmu_metadata_marker(architecture)
+
+    inherited = architecture.get_part_def("UnconfiguredBall")
+    assert "fmu_meta" not in inherited.attributes
+
+
+def test_analysis_definition_derives_from_the_core_marker(tmp_path) -> None:
+    architecture = load(_marker_user(tmp_path), core_definitions())
+
+    analysis = architecture.get_part_def("SystemAnalysis")
+    marker = architecture.resolve_part("Analysis")
+
+    assert analysis.specializes == ("Analysis",)
+    assert marker is not None
+    assert marker.package == CORE_PACKAGE
 
 
 def test_load_with_include_accepts_a_directory(tmp_path) -> None:
@@ -230,6 +308,7 @@ def test_included_root_package_name_need_not_match(tmp_path) -> None:
     assert architecture.included_definitions == {
         "CommonVocab::SspModel",
         "CommonVocab::FmuModel",
+        "CommonVocab::Analysis",
         "CommonVocab::ParameterInterface",
         "CommonVocab::FmuMetadata",
     }

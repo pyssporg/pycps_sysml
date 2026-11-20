@@ -26,50 +26,35 @@ Anything not listed here is language the IR keeps but no marker interprets.
 | `attribute def ParameterSet` | attribute def, empty marker | marker | `parameters/dialect/markers.py` |
 | `pyssp_*` names | any attribute | migration error naming the typed-container replacement | `core/control.py` |
 | `variation part def`, `variation attribute def` | definition | `is_variation` | `model/variation.py` |
-| `variant part n : T` or `variant { body }` | variation point | `variants` | `model/variation.py` |
+| `variant part n : T` or `variant part n { body }` | variation point; body holds parts, connections, binds, named typed attributes, a nested variation point; typed and bodied is refused, as is a third level; unnamed `variant part { ... }` parses but is dropped, bare `variant { ... }` is a syntax error | `variants` | `model/variation.py` |
 | `:>> p = T::v` | configuration selection | binding | `parameters/configuration.py` |
 | `constraint def`, `assert [not] <expr>` | constraint usage | Boolean expression | `model/parser.py`, `parameters/constraints.py` |
 
 **Experiment split.** `DefaultExperiment` mirrors `ssd:DefaultExperiment`
-(`startTime`, `stopTime`; seconds, informational in the XSD); `Experiment`
-specializes it and adds the `fmi2:DefaultExperiment` fields `stepSize` and
-`tolerance`. `startTime` and `stopTime` are required and numeric; `stepSize`
-and `tolerance` are optional, positive when authored, and no field authors a
-numeric default. Exporters project by disposition: the FMI model-description
-exporter copies every authored field, while the SSD exporter copies only
-`startTime` and `stopTime`, so `stepSize` and `tolerance` are intentionally
-dropped from `.ssd`. A local vocabulary may redeclare its own
-`DefaultExperiment` with all four fields; the reader stays permissive.
+(`startTime`, `stopTime`, required, numeric, seconds, informational in the XSD);
+`Experiment` adds the FMI `stepSize` and `tolerance` (optional, positive, no
+numeric default). Exporters project by disposition: FMI copies every authored
+field, SSD only `startTime` and `stopTime`. A local vocabulary may redeclare all
+four; the reader stays permissive.
 
-**Ownership boundary.** An implementing library selects a domain by passing
-policy objects, not by re-declaring markers: `RolePolicy` binds the model,
-analysis, and FmuModel markers and their predicates, and `metadata/roles.py`
-also owns the experiment recognizers. `DialectPolicy` adds those recognizers
-plus the metadata recognizers and the retired and flat-connector rejections.
-`core/control.py` holds one retired-tag map and the residual `pyssp_*`
-catch-all; it is migration vocabulary, not a domain policy. Marker names stay
-exported as defaults (`SSP_MODEL_MARKER`, `ANALYSIS_MARKER`,
-`FMU_MODEL_MARKER`, the `Parameter*` names), so a caller that wants the default
-writes nothing; a caller that wants another domain constructs the policy
-(INFO-003).
+**Ownership boundary.** Implementers select a domain with policy objects, never
+by re-declaring markers: `RolePolicy` binds the model, analysis, and FmuModel
+markers and predicates, and `metadata/roles.py` owns the experiment recognizers;
+`DialectPolicy` adds the metadata recognizers and retired and flat-connector
+rejections. `core/control.py` holds one retired-tag map and the residual
+`pyssp_*` catch-all, migration vocabulary not a domain policy. Marker names stay
+exported as defaults; another domain constructs its policy (INFO-003).
 
-**Validation.** The dialect validators stay fail-fast, because a generator has
-nothing to emit after the first bad marker. `pycps_sysml2.validation.validate`
-calls each one in turn and collects the `ValueError` under a stable check code:
-`role-markers`, `marker-kinds`, `retired-control-attributes`,
-`parameter-dialect` (when a composition root is given), `specialization`
-(cyclic specialization, incompatible redefinition, usage-kind mismatch
-collected by `analyze_semantics`), `fmu-metadata` (which also rejects an
-`implementation` outside the closed SSP set
-`any|ModelExchange|CoSimulation|ScheduledExecution`), and `fmu-marker` (a
-part definition that locally declares `fmu_meta` must specialize `FmuModel`;
-the inherited unfilled core slot is not a local declaration). An undefined
-supertype and a definition-kind mismatch are not reported, because the pinned
-analyzer emits no code for them.
-`require_fmu_metadata` is the one FMU assertion that returns its problems
-instead of raising, so a report can name every leaf component at once.
+**Validation.** Validators stay fail-fast and collect each `ValueError` under a
+stable code: `role-markers`, `marker-kinds`, `retired-control-attributes`,
+`parameter-dialect` (with a composition root), `specialization` (cyclic,
+incompatible redefinition, usage-kind mismatch), `fmu-metadata` (rejects an
+`implementation` outside `any|ModelExchange|CoSimulation|ScheduledExecution`),
+`fmu-marker` (a local `fmu_meta` requires `:> FmuModel`), and nothing for an
+undefined supertype or definition-kind mismatch, because the pinned analyzer
+emits no code. `require_fmu_metadata` returns problems instead of raising.
 
-**Core vocabulary.** The markers and metadata schemas in the table ship in
-one packaged file, `definitions/core.sysml`; a model loads it as one included
-root with `load(model, core_definitions())` instead of declaring the names
-itself (INFO-012).
+**Core vocabulary.** The markers and schemas ship in one packaged
+`definitions/core.sysml`: `load(model, core_definitions())` supplies the
+definitions, `private import PysspCore::*;` supplies visibility, and Core
+definitions (INFO-012) holds the canonical snippet.

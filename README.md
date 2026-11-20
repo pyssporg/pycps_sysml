@@ -41,77 +41,53 @@ surface.
 
 ## Python API
 
-Save this as `plant.sysml`:
+The dialect definitions ship in the packaged core library (`package PysspCore`);
+a model imports them with `private import PysspCore::*;`, and `load` receives
+that library as an include root. Save this as `plant.sysml`:
 
 ```sysml
 package Plant {
-  part def SspModel;
-  attribute def SspMetadata { attribute source : String; }
-  attribute def PlantSource :> SspMetadata { attribute source = "plant.sysml"; }
-
-  port def Signal { attribute value : Real; }
-  part def Step { out port y : Signal; }
-  part def Sine { out port y : Signal; }
-
-  variation part def SourceChoice {
-    variant part step : Step;
-    variant part sine : Sine;
-  }
-
+  private import PysspCore::*;
   part def PlantComposition :> SspModel {
-    attribute ssp_source : PlantSource;
-    part source : SourceChoice;
+    part ball : Ball;
   }
+  part def Ball;
 }
 ```
 
-Then load it, select a variant, and read the dialect metadata:
+Load it with the definitions as an include root and read the composition:
 
 ```python
-from pycps_sysml2 import load
-from pycps_sysml2.metadata import ssp_metadata
-from pycps_sysml2.parameters import SSP_POLICY, resolve
+from pycps_sysml2 import core_definitions, load
 
-architecture = load("plant.sysml")          # a file or a directory of files
-
-chosen = resolve(
-    architecture,
-    "PlantComposition",
-    {"source": "step"},                     # usage name -> variant name
-    roles=SSP_POLICY.roles,                 # required: the domain is a policy
-)
-
-composition = chosen.get_part_def("PlantComposition")
-print(chosen.part_definitions["PlantComposition"].parts["source"].type_name)
-print(ssp_metadata(chosen, composition).source)
+architecture = load("plant.sysml", core_definitions())
+composition = architecture.get_part_def("PlantComposition")
+print(composition.parts["ball"].type_name)
 ```
 
 ```text
-Step
-plant.sysml
+Ball
 ```
 
-`resolve` returns a deep copy; `architecture` is untouched. `roles=` is the
-exact policy argument: every public entry point under `parameters/` requires it
-and supplies no default. `SSP_POLICY.roles` is `SSP_ROLES`; another domain
-constructs its own `RolePolicy` or `DialectPolicy`.
+## Examples
 
-Run the dialect checks as one report instead of stopping at the first failure:
+The repo ships runnable worked examples: loading, inheritance, variation and
+variant forms, selection and design-space limits, configuration and analysis
+plans, the parameter dialect, validation reports, and packages/export. Run one
+from a checkout: `python examples/01-load-and-traverse/run.py`.
 
-```python
-from pycps_sysml2 import validate
+`tests/test_examples.py` executes each example and compares its stdout with the
+documented output. `examples/README.md` is the index.
 
-report = validate(architecture, "PlantComposition")
-print(report.format())          # one PASS per check, one FAIL line per issue
-report.raise_for_issues()       # ValueError with every message; no-op when ok
-```
-
-`validate` starts from the SSP vocabulary and takes `roles=` and `policy=` to
-override it. A composition root enables the parameter check and narrows the FMU
-metadata check to its component definitions; without one, every leaf part
-definition except the role markers is checked. The `fmu-marker` check also
-requires any definition that locally declares `fmu_meta` to specialize
-`FmuModel`.
+- `01-load-and-traverse` — `load` with the core include, package and definition lookup, declared members and source files.
+- `02-inherit-core-definitions` — specializing `SspModel`/`FmuModel` and reading the inherited metadata slot and experiment.
+- `03-variation-and-selection` — variation points, `resolve_selected`, the canonical selection map, `parse_selection`, then constraint statuses and `enforce_constraints`.
+- `04-variant-bodies` — typed, body, and usage-level variants, and a nested variation point.
+- `05-configuration-and-plans` — `:>>` configuration, `derived_selection`, and analysis plans.
+- `06-design-space-limits` — two enumerated design points, a typed cross-point constraint, a pinned configuration, and an incomplete selection refused.
+- `07-parameter-dialect` — parameter ports, declarations, applied sets, binds, `mapping_specs`.
+- `08-validation-report` — `validate` as one report, `format()`, `ok`, and `raise_for_issues()`, with a broken second model.
+- `09-packages-and-export` — qualified names across packages, imports, and an `export_declared()` round trip.
 
 ## Multi-root loading and core definitions
 
@@ -119,17 +95,13 @@ requires any definition that locally declares `fmu_meta` to specialize
 roots:
 
 ```python
-import pycps_sysml2
-
-architecture = load("plant.sysml", pycps_sysml2.core_definitions())
 architecture = load(["plant.sysml", "shared/vocabulary"], "another/file.sysml")
 ```
 
 `path` is either one root or a sequence whose first element is the primary
-model root; further sequence elements and `*includes` are included roots. A
-root is a `.sysml` file or a directory of them. With no includes,
-`load(primary)` behaves exactly as before: the primary's files must share one
-package name.
+model root; later elements and `*includes` are included roots. A root is a
+`.sysml` file or a directory of them. With no includes, `load(primary)` requires
+one package name across the primary's files.
 
 An included root merges definitions and may use any package name, because it
 supplies vocabulary rather than composition. A definition the model already
@@ -138,12 +110,16 @@ the local declaration to remove; one name supplied by two included roots is
 also an error and names both roots. Merged names are recorded in
 `Architecture.included_definitions` and excluded from `export_declared()`.
 
+Inclusion does not make definitions visible: the model still needs
+`private import PysspCore::*;`. A `part def` specializing `SspModel` or
+`FmuModel` inherits its metadata slot unfilled, which reads as "no metadata".
+
 `core_definitions()` returns the packaged `definitions/core.sysml`
 (`package PysspCore`): `SspModel`, `Analysis`, `FmuModel`,
 `ParameterInterface`, `ParameterSet`, `SourcedMetadata`, `FmuMetadata`,
-`SspMetadata`, `DefaultExperiment`, and `Experiment`. It is one
-possible include, not a special case. The wheel carries the file as package
-data.
+`SspMetadata`, `DefaultExperiment`, and `Experiment`. It is one possible
+include, not a special case. `DefaultExperiment` is the one deliberate licence:
+a local vocabulary may redeclare it, and the reader is permissive.
 
 ## Errors and limits
 
@@ -167,7 +143,7 @@ data.
 ## Development
 
 ```bash
-ruff check src tests
+ruff check src tests examples
 python -m pytest -m "not slow"      # the CI gate
 python -m pytest                    # includes slow
 python -m build                     # wheel and sdist
