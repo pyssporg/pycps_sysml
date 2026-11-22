@@ -14,12 +14,12 @@ Anything not listed here is language the IR keeps but no marker interprets.
 
 | marker or construct | attaches to | value | code ref |
 |---|---|---|---|
-| `part def SspModel` | part def; declares `ssp_meta : SspMetadata` | marker; an inherited unfilled slot authors no metadata | `metadata/roles.py`, `definitions/core.sysml` |
+| `part def SspModel` | part def; declares `ssp_meta : SspMetadata` | marker; an inherited unfilled slot authors no metadata | `metadata/roles.py`, `pyssp_sysml_definitions/core.sysml` |
 | `part def Analysis` | part def, empty marker | marker | `metadata/roles.py` |
-| `part def FmuModel` | part def; declares `fmu_meta : FmuMetadata` | marker; an inherited unfilled slot authors no metadata | `metadata/roles.py`, `definitions/core.sysml` |
-| `attribute def SourcedMetadata` | attribute def | `source` String; shared base for artifact sources | `definitions/core.sysml` |
-| `attribute def DefaultExperiment` | attribute def | `startTime`, `stopTime` Real; the SSP disposition | `metadata/roles.py`, `definitions/core.sysml` |
-| `attribute def Experiment :> DefaultExperiment` | attribute def marker | adds `stepSize`, `tolerance` Real; the FMI disposition | `metadata/roles.py`, `definitions/core.sysml` |
+| `part def FmuModel` | part def; declares `fmu_meta : FmuMetadata` | marker; an inherited unfilled slot authors no metadata | `metadata/roles.py`, `pyssp_sysml_definitions/core.sysml` |
+| `attribute def SourcedMetadata` | attribute def | `source` String; shared base for artifact sources | `pyssp_sysml_definitions/core.sysml` |
+| `attribute def DefaultExperiment` | attribute def | `startTime`, `stopTime` Real; the SSP disposition | `metadata/roles.py`, `pyssp_sysml_definitions/core.sysml` |
+| `attribute def Experiment :> DefaultExperiment` | attribute def marker | adds `stepSize`, `tolerance` Real; the FMI disposition | `metadata/roles.py`, `pyssp_sysml_definitions/core.sysml` |
 | `attribute def SspMetadata :> SourcedMetadata` | attribute def | `source` inherited | `metadata/ssp_metadata.py` |
 | `attribute def FmuMetadata :> SourcedMetadata` | attribute def | `source` inherited, `implementation` String validated against the SSP enum | `metadata/fmu_metadata.py` |
 | `port def ParameterInterface` | port def, empty marker | marker | `parameters/dialect/markers.py` |
@@ -54,7 +54,9 @@ incompatible redefinition, usage-kind mismatch), `fmu-metadata` (rejects an
 undefined supertype or definition-kind mismatch, because the pinned analyzer
 emits no code. `require_fmu_metadata` returns problems instead of raising.
 
-**Core vocabulary.** The markers and schemas ship in one packaged
-`definitions/core.sysml`: `load(model, core_definitions())` supplies the
-definitions, `private import PysspCore::*;` supplies visibility, and Core
-definitions (INFO-012) holds the canonical snippet.
+**Core vocabulary.** The markers and schemas ship in
+`pyssp-sysml-definitions` as `core.sysml`; `pycps_sysml2` re-exports
+`core_definitions` from its `definitions/` facade. `load(model,
+core_definitions())` supplies the definitions, `private import PysspCore::*;`
+supplies visibility, and Core definitions (INFO-012) holds the canonical
+snippet. The marker/constant drift test is `tests/test_definition_markers.py`.

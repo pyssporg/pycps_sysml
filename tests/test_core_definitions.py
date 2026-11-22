@@ -98,8 +98,8 @@ def test_core_definitions_is_an_existing_real_file() -> None:
 
     assert isinstance(path, Path)
     assert path.is_file()
-    assert path.name == CORE_FILE.rsplit("/", 1)[-1] == "core.sysml"
-    assert path.parent.name == "definitions"
+    assert path.name == CORE_FILE == "core.sysml"
+    assert path.parent.name == "pyssp_sysml_definitions"
 
 
 def test_core_definitions_parses_as_the_core_package() -> None:
@@ -274,7 +274,13 @@ def test_analysis_definition_derives_from_the_core_marker(tmp_path) -> None:
 
 
 def test_load_with_include_accepts_a_directory(tmp_path) -> None:
-    architecture = load(_marker_user(tmp_path), core_definitions().parent)
+    core_dir = tmp_path / "core"
+    core_dir.mkdir()
+    (core_dir / "core.sysml").write_text(
+        core_definitions().read_text(encoding="utf-8"), encoding="utf-8"
+    )
+
+    architecture = load(_marker_user(tmp_path), core_dir)
 
     assert f"{CORE_PACKAGE}::SspModel" in architecture.part_definitions
     assert architecture.included_definitions == CORE_KEYS

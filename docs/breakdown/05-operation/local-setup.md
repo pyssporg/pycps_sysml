@@ -18,9 +18,10 @@ pip install -e ".[dev]"
 python -c "import pycps_sysml2; print(pycps_sysml2.__version__)"
 ```
 
-The `dev` extra is `pytest`, `ruff`, and `build`; the only runtime dependency is
-the hard `sysmlpy==0.96.4` pin (INFO-006). The install provides no console
-script: v0.1.0 ships the Python API only.
+The `dev` extra is `pytest`, `ruff`, and `build`. Runtime dependencies are the
+hard `sysmlpy==0.96.4` pin (INFO-006) and `pyssp-sysml-definitions>=0.1.0` for
+the shared vocabulary. The install provides no console script: v0.1.0 ships the
+Python API only.
 
 Before a change lands:
 

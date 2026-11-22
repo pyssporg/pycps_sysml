@@ -6,9 +6,11 @@ metadata accessor for the SSP and the FMI dialects.
 
 **Boundary.** This library reads and interprets SysML. It emits no artifact: no
 SSD, SSV, SSM, SSP, modelDescription, C header, or FMU. `pyssp_sysml2` (SSP
-artifacts) and `pyfmi_sysml2` (FMI artifacts) are implementers: both import
+artifacts) and `pyfmi_interfaces` (FMI artifacts) are implementers: both import
 `pycps_sysml2` for every SysML read and keep no parser, marker set, or IR of
-their own. A consumer that needs SysML knowledge installs this package; a
+their own. The shared vocabulary ships in `pyssp-sysml-definitions`;
+`pycps_sysml2` re-exports `core_definitions` and keeps the parser, IR, and
+policies. A consumer that needs SysML knowledge installs this package; a
 consumer that needs an artifact installs an implementer.
 
 It is not a SysML v2 conformance suite, not a general SysML toolchain, and not a
@@ -19,11 +21,12 @@ It is not a SysML v2 conformance suite, not a general SysML toolchain, and not a
 From the release wheel:
 
 ```bash
-pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml2/releases/download/v0.3.0/pycps_sysml2-0.3.0-py3-none-any.whl"
+pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml2/releases/download/v0.4.0/pycps_sysml2-0.4.0-py3-none-any.whl"
 ```
 
-The one runtime dependency is pinned exactly: `sysmlpy==0.96.4`. From a
-checkout:
+Runtime dependencies are the exact `sysmlpy==0.96.4` parser pin and
+`pyssp-sysml-definitions>=0.1.0` for the shared vocabulary; the latter stays a
+plain specifier until its first release asset exists. From a checkout:
 
 ```bash
 python3 -m venv venv
@@ -41,9 +44,10 @@ surface.
 
 ## Python API
 
-The dialect definitions ship in the packaged core library (`package PysspCore`);
-a model imports them with `private import PysspCore::*;`, and `load` receives
-that library as an include root. Save this as `plant.sysml`:
+The dialect definitions ship in `pyssp-sysml-definitions` (`package
+PysspCore`); `pycps_sysml2` re-exports `core_definitions` for the historical
+import path. A model imports them with `private import PysspCore::*;`, and
+`load` receives that library as an include root. Save this as `plant.sysml`:
 
 ```sysml
 package Plant {
@@ -114,12 +118,14 @@ Inclusion does not make definitions visible: the model still needs
 `private import PysspCore::*;`. A `part def` specializing `SspModel` or
 `FmuModel` inherits its metadata slot unfilled, which reads as "no metadata".
 
-`core_definitions()` returns the packaged `definitions/core.sysml`
-(`package PysspCore`): `SspModel`, `Analysis`, `FmuModel`,
-`ParameterInterface`, `ParameterSet`, `SourcedMetadata`, `FmuMetadata`,
-`SspMetadata`, `DefaultExperiment`, and `Experiment`. It is one possible
-include, not a special case. `DefaultExperiment` is the one deliberate licence:
-a local vocabulary may redeclare it, and the reader is permissive.
+`core_definitions()` returns the `core.sysml` shipped by
+`pyssp-sysml-definitions` (`package PysspCore`): `SspModel`, `Analysis`,
+`FmuModel`, `ParameterInterface`, `ParameterSet`, `SourcedMetadata`,
+`FmuMetadata`, `SspMetadata`, `DefaultExperiment`, and `Experiment`. It is one
+possible include, not a special case. `tests/test_definition_markers.py` is the
+drift test: the Python marker constants and the shipped vocabulary must declare
+the same names. `DefaultExperiment` is the one deliberate licence: a local
+vocabulary may redeclare it, and the reader is permissive.
 
 ## Errors and limits
 
@@ -138,7 +144,7 @@ a local vocabulary may redeclare it, and the reader is permissive.
 - Dialect limits: one `parameters` port per part, tuple-valued list attributes,
   and `metadata`/`comment` reserved as words.
 - FMI authoring attributes (guid policy, modelName override, capabilities, units,
-  declared causality) are out of scope for v0.1.0; `pyfmi_sysml2` derives them.
+  declared causality) are out of scope for v0.1.0; `pyfmi_interfaces` derives them.
 
 ## Development
 

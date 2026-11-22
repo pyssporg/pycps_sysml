@@ -26,6 +26,7 @@ classifiers = [
 # bump is a dialect decision (see docs/breakdown/03-implementation/sysmlpy-pin.md).
 dependencies = [
     "sysmlpy==0.96.4",
+    "pyssp-sysml-definitions>=0.1.0",
 ]
 
 [project.optional-dependencies]
@@ -38,9 +39,6 @@ dev = [
 [tool.setuptools]
 package-dir = {"" = "src"}
 include-package-data = true
-
-[tool.setuptools.package-data]
-pycps_sysml2 = ["definitions/*.sysml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "pycps_sysml2.__version__" }

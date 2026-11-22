@@ -29,9 +29,13 @@ become. It is the first document to read, not a reference of last resort.
 
 `pycps_sysml2` is the single home of our SysML dialect: parsing, the IR,
 variation, selection, constraints, and every marker and metadata accessor for
-the SSP and the FMI dialects. `pyssp_sysml2` and `pyfmi_sysml2` implement the
+the SSP and the FMI dialects. `pyssp_sysml2` and `pyfmi_interfaces` implement the
 dialect; they consume this library and emit artifacts. This repository emits
 none.
+
+- The shared vocabulary ships in `pyssp-sysml-definitions`; `definitions/` here
+  is a compatibility facade that re-exports `core_definitions` and `CORE_FILE`.
+  The parser, IR, and policies stay here.
 
 - Current state, the dialect inventory, and the layering rule live in
   `docs/breakdown/`; the code is the source of truth when the two disagree.
@@ -42,8 +46,12 @@ none.
 - **One dialect owner.** A marker, attribute name, or resolution rule exists
   here once. An implementer selects a domain with `RolePolicy`,
   `DialectPolicy`, or `ControlAttributes`; it never re-declares a marker.
+- **The vocabulary ships downstream.** `PysspCore` is package data in
+  `pyssp-sysml-definitions`; `definitions/` re-exports `core_definitions`, and
+  no `.sysml` file is bundled here. The marker-constant drift test
+  (`tests/test_definition_markers.py`) must stay green.
 - **No `pyssp_standard`, direct or transitive.** It carries artifact objects,
-  which this library does not know about. `pyssp_sysml2` and `pyfmi_sysml2` are
+  which this library does not know about. `pyssp_sysml2` and `pyfmi_interfaces` are
   never imported either.
 - **The layering rule.** `model` ← `core` ← `metadata` ← `parameters`;
   `parameters/dialect` above `metadata`. Nothing below `parameters` imports

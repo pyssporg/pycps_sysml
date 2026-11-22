@@ -17,7 +17,7 @@ marker and metadata accessor for the SSP and FMI dialects alike (`SspModel`,
 attribute container). Special data is recognized by its container type, never
 by an attribute name.
 
-**Roles and commitments.** `pyssp_sysml2` and `pyfmi_sysml2` implement this
+**Roles and commitments.** `pyssp_sysml2` and `pyfmi_interfaces` implement this
 dialect: each imports the package for every SysML read and keeps no parser,
 marker set, or IR, and implementers build on released wheels. One owner per
 marker, name, or rule, selected through the policy objects (INFO-003); one

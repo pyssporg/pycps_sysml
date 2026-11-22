@@ -31,7 +31,7 @@ consumes the public dialect surface plus `core.control`. `parameter_set_resource
 an artifact path, so `pyssp_sysml2` re-adds it for `artifacts/ssp.py:347` and
 `artifacts/ssd.py:158`. `core/paths.py`, `artifacts/`, `sysml/`, `cli.py` and
 the old root `__init__.py` stay behind; `artifacts/fmi.py` belongs to
-`pyfmi_sysml2`.
+`pyfmi_interfaces`.
 
 **Behaviour changes.** Policy arguments are required keyword-only with no
 implicit default; a domain-neutral diagnostic that named `SspModel` now says

@@ -9,10 +9,14 @@ status: current
 
 # Core definitions
 
-`src/pycps_sysml2/definitions/core.sysml` is the single copy of `package
+The `core.sysml` shipped by `pyssp-sysml-definitions`
+(`src/pyssp_sysml_definitions/core.sysml`) is the single copy of `package
 PysspCore`: markers `SspModel`, `Analysis`, `FmuModel`; `ParameterInterface`;
 `ParameterSet`; schemas `SourcedMetadata`, `FmuMetadata`, `SspMetadata`; and
-`DefaultExperiment` with `Experiment :> DefaultExperiment`.
+`DefaultExperiment` with `Experiment :> DefaultExperiment`. The file ships as
+package data of `pyssp-sysml-definitions`; `pycps_sysml2.definitions` is a
+compatibility facade re-exporting `core_definitions` and `CORE_FILE`, so the
+historical import path and names keep working.
 
 **Include plus import.** `load(model, core_definitions())` supplies the
 definitions and `private import PysspCore::*;` supplies visibility; both are
@@ -50,7 +54,8 @@ Generated and tooling fields stay out: FMI `fmiVersion`, `modelName`, `guid`, `g
 
 | rule | behavior |
 |---|---|
-| package data | `pyproject.toml` lists `definitions/*.sysml`, so the wheel carries it; `core_definitions()` returns a real `Path`, refusing a zipped install |
+| package data | `pyssp-sysml-definitions` lists `*.sysml`, so its wheel carries `core.sysml`; `core_definitions()` returns a real `Path`, refusing a zipped install |
+| drift test | `tests/test_definition_markers.py` asserts that the Python marker constants and the shipped vocabulary declare the same names; `tests/test_core_definitions.py` asserts the real path lives under `pyssp_sysml_definitions` |
 | multi-root load | `load(path, *includes)` takes a primary root plus any included roots; `path` may be a sequence whose first element is primary, and `*includes` are included roots; no includes is unchanged |
 | primary vs included | every primary file declares the same package; an included root may declare any, supplying definitions rather than composition |
 | duplicate rule | only a repeated stored key (same package and name) raises `ValueError`; another package's same bare name coexists. A repeat against a model key names the definition, kind, both sources, and the local declaration to remove, never an override; two included roots repeating a key also raise, naming both roots |

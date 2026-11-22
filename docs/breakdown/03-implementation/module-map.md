@@ -23,7 +23,7 @@ dataclasses, and the validation report.
 | `model/attribution.py` | per-file scan: packages, variation facts, constraint bodies, definition-to-file attribution | `model.parser`, `model.source`, `model.variation`, `model.names` |
 | `model/effective.py` | on-demand inherited member view: `EffectiveMembers` and `effective_members` | `model.model` |
 | `model/semantics.py` | sysmlpy specialization issues translated to repo-owned `SemanticIssue` | `model.model`, `model.parser` |
-| `definitions/` | the packaged core vocabulary and `core_definitions()` | stdlib |
+| `definitions/` | compatibility facade re-exporting `core_definitions` and `CORE_FILE` from the definitions package | `pyssp_sysml_definitions` |
 | `core/control.py`, `core/fmi_helpers.py` | the retired `pyssp_*` migration map and residual catch-all; FMI helpers | `model` |
 | `metadata/helpers.py` | the single copy of `short_name` and `specializes_marker`; the legacy attribute-only `effective_members` wrapper | `model` |
 | `metadata/roles.py`, `metadata/ssp_metadata.py`, `metadata/fmu_metadata.py` | role policy, SSP metadata, FMI metadata | `model`, `core`, `metadata.helpers` |

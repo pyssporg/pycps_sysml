@@ -18,7 +18,7 @@ artifact is emitted.
 
 1. **FMI authoring attributes.** Guid policy, modelName override, capabilities
    and flags, units, declared causality and variability, binary name, and source
-   language. `pyfmi_sysml2` v0.1.0 derives defaults for all of them; the markers
+   language. `pyfmi_interfaces` v0.1.0 derives defaults for all of them; the markers
    are added here first, with their recognizers, and only then consumed.
 2. **A second policy.** An explicit FMI-only or test `DialectPolicy` that
    exercises the seam without a second dialect. The seam exists; only the SSP
