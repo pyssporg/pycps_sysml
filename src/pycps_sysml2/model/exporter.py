@@ -34,6 +34,13 @@ appear sorted by name. Attributes, port usages, and part usages are sorted by
 name inside their definition; connections and bindings keep insertion order.
 A definition of a package other than the architecture's own is omitted, so an
 included root never appears in the model's declaration text.
+
+When an emitted definition refers to one of the shipped ``PysspCore`` names
+(its supertype, a member type, or a usage type), the file declares
+``private import PysspCore::*;``. A package that refers to none of them stays
+import-free. The exporter never writes a synthesized copy of a shipped role
+marker: synthesis exists in memory for classification, and the vocabulary
+itself ships as an include root.
 """
 
 from __future__ import annotations
@@ -52,6 +59,27 @@ from pycps_sysml2.model.model import (
 from pycps_sysml2.model.names import quote_name
 
 DEFAULT_SOURCE_FILE = "architecture.sysml"
+
+#: The package the shared vocabulary ships in.
+CORE_PACKAGE = "PysspCore"
+
+#: Definitions the shipped ``PysspCore`` vocabulary declares. A model that
+#: refers to one of these names needs the wildcard import; a synthesized copy
+#: is never part of the declaration text.
+SHIPPED_DEFINITIONS = frozenset(
+    {
+        "FmuMetadata",
+        "SspMetadata",
+        "SourcedMetadata",
+        "FmuModel",
+        "SspModel",
+        "Analysis",
+        "ParameterInterface",
+        "ParameterSet",
+        "DefaultExperiment",
+        "Experiment",
+    }
+)
 
 _DEFINITION_INDENT = "  "
 _MEMBER_INDENT = "    "
@@ -105,6 +133,36 @@ def _endpoint(part: str | None, port: str) -> str:
 def _qualified_name(text: str) -> str:
     """Emit a possibly qualified name, quoting each ``::`` segment as needed."""
     return "::".join(quote_name(segment) for segment in text.split("::"))
+
+
+def _refers_to_shipped_name(definition: Definition) -> bool:
+    """Whether ``definition`` names a shipped definition in emitted text.
+
+    Only references count, not the definition's own name: a user-authored
+    declaration of a shipped name resolves locally and needs no import.
+    """
+    referenced = list(getattr(definition, "specializes", ()))
+    referenced.extend(
+        attribute.type_name
+        for attribute in getattr(definition, "attributes", {}).values()
+        if attribute.type_name
+    )
+    referenced.extend(
+        port.type_name for port in getattr(definition, "ports", {}).values()
+    )
+    referenced.extend(
+        part.type_name
+        for part in getattr(definition, "parts", {}).values()
+        if part.type_name
+    )
+    referenced.extend(
+        parameter.type_name
+        for parameter in getattr(definition, "parameters", {}).values()
+        if parameter.type_name
+    )
+    return any(
+        name.rsplit("::", 1)[-1] in SHIPPED_DEFINITIONS for name in referenced
+    )
 
 
 def _attribute_lines(attribute: Attribute, indent: str = _MEMBER_INDENT) -> list[str]:
@@ -332,6 +390,10 @@ def export_declared(architecture: Architecture) -> dict[str, str]:
     root supplies definitions from its own package, and those are not part of
     the model's declaration text. A single-package model therefore yields the
     same text as before, one ``package`` block per file.
+
+    A file whose definitions refer to a shipped ``PysspCore`` name declares the
+    wildcard import. A synthesized copy of a shipped definition is left out;
+    the import and the include root supply the real one.
     """
     # Grouped by (package, source file) so the emitted blocks are ordered by
     # package name first, then by source file. Only the architecture's own
@@ -342,6 +404,14 @@ def export_declared(architecture: Architecture) -> dict[str, str]:
         for definition in sorted(definitions, key=lambda d: d.name):
             package = definition.package or architecture.package_name
             if package != architecture.package_name:
+                continue
+            # In-memory synthesis keeps a definition usable for classification,
+            # but the shipped vocabulary is the only declaration of that name.
+            # ``package is None`` is the model's provenance mark for synthesized.
+            if (
+                definition.package is None
+                and definition.name in SHIPPED_DEFINITIONS
+            ):
                 continue
             file_name = definition.source_file or DEFAULT_SOURCE_FILE
             groups.setdefault((package, file_name), []).append(definition)
@@ -357,8 +427,12 @@ def export_declared(architecture: Architecture) -> dict[str, str]:
 
     files: dict[str, str] = {}
     for package, file_name in sorted(groups):
+        definitions = groups[(package, file_name)]
         lines = [f"package {quote_name(package)} {{"]
-        for index, definition in enumerate(groups[(package, file_name)]):
+        if any(_refers_to_shipped_name(definition) for definition in definitions):
+            lines.append(f"{_DEFINITION_INDENT}private import {CORE_PACKAGE}::*;")
+            lines.append("")
+        for index, definition in enumerate(definitions):
             if index:
                 lines.append("")
             lines.extend(_definition_lines(definition))

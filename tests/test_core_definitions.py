@@ -15,6 +15,7 @@ from pycps_sysml2 import core_definitions, load
 from pycps_sysml2.definitions import CORE_FILE
 from pycps_sysml2.metadata import (
     EXPERIMENT_FIELDS,
+    add_fmu_metadata,
     fmu_metadata,
     ssp_metadata,
     validate_fmu_metadata_marker,
@@ -411,3 +412,65 @@ def test_export_declared_omits_included_definitions(tmp_path) -> None:
     assert "attribute def SspMetadata {" not in text
     assert "part def System :> SspModel" in text
     assert text == load(model_file).export_declared()["model.sysml"]
+
+
+def test_export_declares_the_core_import_and_drops_synthesized_carriers(
+    tmp_path,
+) -> None:
+    """A synthesized carrier is replaced by the import and the shipped root."""
+    model_file = tmp_path / "model.sysml"
+    write_model(
+        model_file,
+        """
+        package CarrierUser {
+          part def Comp :> FmuModel;
+        }
+        """,
+    )
+    architecture = load(model_file)
+    add_fmu_metadata(
+        architecture,
+        architecture.get_part_def("Comp"),
+        implementation="CoSimulation",
+        source_file="model.sysml",
+    )
+
+    text = architecture.export_declared()["model.sysml"]
+
+    assert text.count("private import PysspCore::*;") == 1
+    assert "attribute def FmuMetadata" not in text
+    assert "part def FmuModel" not in text
+    assert "attribute def CompFmuMetadata :> FmuMetadata" in text
+
+    exported = tmp_path / "exported"
+    write_model(exported / "model.sysml", text)
+    reloaded = load(exported, core_definitions())
+
+    metadata = fmu_metadata(reloaded, reloaded.get_part_def("Comp"))
+    assert metadata is not None
+    assert metadata.implementation == "CoSimulation"
+
+
+def test_export_omits_the_core_import_without_a_shipped_name(tmp_path) -> None:
+    """A package that refers to no shipped definition stays import-free."""
+    model_file = tmp_path / "model.sysml"
+    write_model(
+        model_file,
+        """
+        package LocalOnly {
+          port def Signal {
+            attribute x : Real;
+          }
+
+          part def Comp {
+            out port sig : Signal;
+          }
+        }
+        """,
+    )
+    architecture = load(model_file)
+
+    text = architecture.export_declared()["model.sysml"]
+
+    assert "private import" not in text
+    assert load(model_file).export_declared()["model.sysml"] == text
