@@ -8,7 +8,7 @@ package Validation {
   part def Component :> FmuModel {
     attribute fmu_meta : ComponentFmu;
   }
-  part def System :> SspModel {
+  part def System :> FmuModel {
     part component : Component;
   }
 }

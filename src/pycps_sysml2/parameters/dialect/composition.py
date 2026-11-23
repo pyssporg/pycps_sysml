@@ -11,6 +11,11 @@ from dataclasses import dataclass
 from enum import Enum
 
 from pycps_sysml2.core.control import validate_retired_attributes
+from pycps_sysml2.metadata.fmu_metadata import (
+    FMU_METADATA_ATTR,
+    FMU_METADATA_MARKER,
+)
+from pycps_sysml2.metadata.helpers import is_inherited_schema_slot
 from pycps_sysml2.model import (
     Architecture,
     Attribute,
@@ -441,6 +446,16 @@ def _reject_flat_attributes(
 ) -> None:
     members = effective_members(architecture, part_def)
     for name, attribute in members.attributes.items():
+        if is_inherited_schema_slot(
+            architecture,
+            part_def,
+            name,
+            attribute,
+            slot_name=FMU_METADATA_ATTR,
+            marker=FMU_METADATA_MARKER,
+        ):
+            # The marker's unfilled slot is inherited, not authored metadata.
+            continue
         kind = classify_attribute(architecture, attribute, policy=policy)
         if (
             policy.fmu_metadata_attr is not None
@@ -504,6 +519,16 @@ def validate_parameter_dialect(
 
     system_members = effective_members(architecture, system)
     for name, attribute in system_members.attributes.items():
+        if is_inherited_schema_slot(
+            architecture,
+            system,
+            name,
+            attribute,
+            slot_name=FMU_METADATA_ATTR,
+            marker=FMU_METADATA_MARKER,
+        ):
+            # The marker's unfilled slot is inherited, not authored metadata.
+            continue
         match classify_attribute(architecture, attribute, policy=policy):
             case AttributeKind.FMU_METADATA:
                 if not policy.roles.is_fmu_model(architecture, system):
