@@ -201,3 +201,27 @@ def test_shipped_parameter_markers_stay_empty() -> None:
         architecture,
         architecture.get_attribute_def(markers.PARAMETER_SET_MARKER),
     )
+
+
+def test_the_export_import_covers_exactly_the_shipped_definitions() -> None:
+    """Every name the exporter treats as shipped is declared by ``PysspCore``.
+
+    The exporter emits ``private import PysspCore::*;`` for these names and
+    omits a synthesized copy, so a name that is not in ``core.sysml`` would
+    silently export an unresolvable reference.
+    """
+
+    from pycps_sysml2.model.exporter import SHIPPED_DEFINITIONS
+
+    architecture = load(core_definitions())
+    declared = (
+        set(architecture.attribute_definitions)
+        | set(architecture.part_definitions)
+        | set(architecture.port_definitions)
+    )
+    missing = sorted(SHIPPED_DEFINITIONS - declared)
+
+    assert not missing, (
+        "the exporter treats these names as shipped, but core.sysml does not "
+        "declare them: " + ", ".join(missing)
+    )
