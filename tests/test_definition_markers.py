@@ -53,3 +53,12 @@ def test_core_definitions_carry_every_vocabulary_constant() -> None:
         "core.sysml no longer carries these constants from code: "
         + ", ".join(missing)
     )
+
+
+def test_core_definitions_state_the_reserved_parameter_port_name() -> None:
+    """The reserved usage name is canonical in ``core.sysml``, not only code."""
+
+    markers = importlib.import_module("pycps_sysml2.parameters.dialect.markers")
+    text = core_definitions().read_text(encoding="utf-8")
+
+    assert f"in port {markers.PARAMETERS_PORT_NAME}" in text

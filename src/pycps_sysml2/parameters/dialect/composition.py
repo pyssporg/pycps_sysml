@@ -20,7 +20,10 @@ from pycps_sysml2.model import (
     PartUsage,
     effective_members,
 )
-from pycps_sysml2.parameters.dialect.declarations import parameter_port
+from pycps_sysml2.parameters.dialect.declarations import (
+    parameter_port,
+    validate_parameter_port_names,
+)
 from pycps_sysml2.parameters.dialect.markers import (
     PARAMETER_SET_MARKER,
     PARAMETERS_PORT_NAME,
@@ -478,15 +481,17 @@ def validate_parameter_dialect(
 ) -> None:
     """Reject retired flat parameters and unsupported model attributes.
 
-    Parameters must come from a parameter interface. The composition may carry
-    typed attribute containers (metadata, parameter sets, experiments), but no
-    flat parameters.
+    Parameters must come from a parameter interface named ``parameters``. The
+    composition may carry typed attribute containers (metadata, parameter sets,
+    experiments), but no flat parameters.
     """
     if policy.reject_retired_attributes:
         validate_retired_attributes(architecture)
 
     for part_def in component_definitions(architecture, system):
         _reject_flat_attributes(architecture, part_def, policy)
+        validate_parameter_port_names(architecture, part_def)
+    validate_parameter_port_names(architecture, system)
 
     system_members = effective_members(architecture, system)
     for name, attribute in system_members.attributes.items():

@@ -376,9 +376,9 @@ class PortDefinition(Definition):
 class AttributeDefinition(Definition):
     """An ``attribute def`` with ordered members and optional supertypes.
 
-    Parameter interfaces and parameter sets are both ``attribute def``s;
-    their role is established by specialization (``:> ParameterInterface`` /
-    ``:> ParameterSet``) and by how they are used.
+    Parameter sets are ``attribute def``s marked ``:> ParameterSet``; parameter
+    interfaces are ``port def``s marked ``:> ParameterInterface``. A role is
+    established by specialization and by how the definition is used.
 
     ``is_variation`` marks an attribute-level variation point
     (``variation attribute def ScenarioChoice``). Its alternatives live in

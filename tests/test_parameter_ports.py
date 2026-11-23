@@ -12,12 +12,15 @@ from pathlib import Path
 import pytest
 
 from pycps_sysml2.model import Architecture, load
+from pycps_sysml2.parameters.dialect.composition import validate_parameter_dialect
 from pycps_sysml2.parameters.dialect.declarations import (
     parameter_declarations,
     parameter_interface,
     parameter_items,
+    validate_parameter_port_names,
 )
 from pycps_sysml2.parameters.dialect.markers import validate_marker_definitions
+from pycps_sysml2.parameters.policy import SSP_POLICY
 from tests.fixture_files import render_fixture
 from tests.testhelpers import COMPOSITION_NAME, write_model
 
@@ -156,6 +159,58 @@ def test_attribute_marker_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="defined as an attribute def"):
         validate_marker_definitions(architecture)
+
+
+MISNAMED_INTERFACE_MODEL = """package Ports {
+  port def ParameterInterface;
+  port def Gains :> ParameterInterface { attribute k : Real; }
+  part def Comp {
+    in port gains : Gains;
+  }
+  part def SystemComposition {
+    part comp : Comp;
+  }
+}"""
+
+
+def test_misnamed_parameter_interface_port_is_rejected(tmp_path: Path) -> None:
+    """A marked interface port under another name must fail, not vanish."""
+    architecture = _load(tmp_path, MISNAMED_INTERFACE_MODEL)
+
+    with pytest.raises(ValueError, match="must be named 'parameters'"):
+        validate_parameter_port_names(
+            architecture, architecture.get_part_def("Comp")
+        )
+
+
+def test_misnamed_parameter_interface_fails_the_validation_gate(
+    tmp_path: Path,
+) -> None:
+    """The dialect gate catches the port an exporter would silently skip."""
+    architecture = _load(tmp_path, MISNAMED_INTERFACE_MODEL)
+
+    with pytest.raises(ValueError, match="must be named 'parameters'"):
+        validate_parameter_dialect(
+            architecture,
+            architecture.get_part_def(COMPOSITION_NAME),
+            policy=SSP_POLICY,
+        )
+
+
+def test_interface_under_the_reserved_name_passes(tmp_path: Path) -> None:
+    """The reserved name is the accepted spelling."""
+    architecture = _load(
+        tmp_path,
+        MISNAMED_INTERFACE_MODEL.replace(
+            "in port gains : Gains;", "in port parameters : Gains;"
+        ),
+    )
+
+    validate_parameter_dialect(
+        architecture,
+        architecture.get_part_def(COMPOSITION_NAME),
+        policy=SSP_POLICY,
+    )
 
 
 def test_connected_parameter_ports_still_resolve_as_interfaces(

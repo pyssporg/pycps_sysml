@@ -78,6 +78,31 @@ def parameter_interface(
     return definition
 
 
+def validate_parameter_port_names(
+    architecture: Architecture, part_def: PartDefinition
+) -> None:
+    """Reject a ``ParameterInterface`` port under any name but ``parameters``.
+
+    Every reader and exporter finds parameters through the reserved usage name
+    ``parameters``. A marked interface port under another name would therefore
+    be skipped by the FMI and SSP emitters with no error, silently dropping its
+    parameters from the generated artifacts.
+    """
+    for name, usage in effective_members(architecture, part_def).ports.items():
+        if name == PARAMETERS_PORT_NAME:
+            continue
+        definition = architecture.resolve_port(usage)
+        if definition is None:
+            continue  # other validators report unresolved ports
+        if is_parameter_interface(architecture, definition):
+            raise ValueError(
+                f"{part_def.name}.{name} is a parameter interface port; "
+                f"parameter interfaces must be named '{PARAMETERS_PORT_NAME}'. "
+                f"Rename it to 'in port {PARAMETERS_PORT_NAME} : "
+                f"{definition.name};' or type it as a signal port."
+            )
+
+
 def require_undirected_members(
     architecture: Architecture, interface: PortDefinition
 ) -> None:

@@ -44,9 +44,9 @@ reports "no FMU metadata". A local usage typed by the schema raises "schema
 directly"; a same-name concrete usage shadows the slot, and any other name is
 accepted. A local `fmu_meta` still requires `:> FmuModel` (INFO-002).
 
-`DefaultExperiment` carries `startTime` and `stopTime`; `Experiment` adds
-`stepSize` and `tolerance`, under the experiment split's field and export rules
-(INFO-002). A local vocabulary may redeclare all four; the reader stays permissive.
+`DefaultExperiment`, `Experiment`, and their fields are canonical in
+`core.sysml`; the export rules are INFO-002. A local vocabulary may redeclare
+all four; the reader stays permissive.
 
 Generated and tooling fields stay out: FMI `fmiVersion`, `modelName`, `guid`, `generationTool`,
 `generationDateAndTime`, `variableNamingConvention`, `valueReference`, `numberOfEventIndicators`,
