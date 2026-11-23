@@ -20,7 +20,7 @@ it carries.
 | `part def SspModel` | part def | SSP model marker; an inherited unfilled slot authors no metadata | `metadata/roles.py` |
 | `part def Analysis` | part def, empty marker | model marker | `metadata/roles.py` |
 | `part def FmuModel` | part def | FMI model marker; an inherited unfilled slot authors no metadata | `metadata/roles.py` |
-| `attribute def SourcedMetadata` | attribute def | build metadata: artifact-source base | `pyssp_sysml_definitions/core.sysml` |
+| `attribute def SourcedMetadata` | attribute def | build metadata: family base; reaching it is what makes a typed container build metadata, and no slot records it | `metadata/sourced_metadata.py` |
 | `attribute def DefaultExperiment` | attribute def | build metadata: SSP experiment container | `metadata/roles.py` |
 | `attribute def Experiment :> DefaultExperiment` | attribute def marker | build metadata: FMI experiment superset | `metadata/roles.py` |
 | `attribute def SspMetadata :> SourcedMetadata` | attribute def | build metadata: SSP container | `metadata/ssp_metadata.py` |
@@ -40,7 +40,7 @@ This library implements recognition and does not restate the contract.
 
 | role | recognized by | gate |
 |---|---|---|
-| build metadata | typed attribute whose attribute def reaches `FmuMetadata` or `SspMetadata`, or an experiment container | `metadata/*`, `fmu-marker` |
+| build metadata | typed attribute whose attribute def reaches `SourcedMetadata` — `FmuMetadata`, `SspMetadata`, or another family container, checked in that order — or an experiment container | `metadata/*`, `fmu-marker` |
 | initialization | port def reaching `ParameterInterface` under the reserved usage name `parameters`; attribute def `:> ParameterSet` | `parameter-dialect` (`validate_parameter_port_names`) |
 | runtime signal | every other port | `specialization` |
 
@@ -57,7 +57,8 @@ reader stays permissive.
 **Ownership boundary.** Implementers select a domain with policy objects, never
 by re-declaring markers: `RolePolicy` binds the model, analysis, and FmuModel
 markers and predicates, and `metadata/roles.py` owns the experiment recognizers;
-`DialectPolicy` adds the metadata recognizers and retired and flat-connector
+`DialectPolicy` adds the metadata recognizers — the FMU and SSP containers and
+the generic `SourcedMetadata` family base — and the retired and flat-connector
 rejections. `core/control.py` holds one retired-tag map and the residual
 `pyssp_*` catch-all, migration vocabulary not a domain policy. Marker names stay
 exported as defaults; another domain constructs its policy (INFO-003).

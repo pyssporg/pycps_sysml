@@ -45,6 +45,10 @@ from pycps_sysml2.metadata.roles import (
     require_resolved_variation,
     validate_role_markers,
 )
+from pycps_sysml2.metadata.sourced_metadata import (
+    SOURCED_METADATA_MARKER,
+    is_sourced_metadata_definition,
+)
 from pycps_sysml2.metadata.ssp_metadata import (
     SSP_METADATA_ATTR,
     SSP_METADATA_FIELDS,
@@ -65,6 +69,7 @@ __all__ = [
     "FMU_MODEL_MARKER",
     "FmuMetadata",
     "RolePolicy",
+    "SOURCED_METADATA_MARKER",
     "SSP_METADATA_ATTR",
     "SSP_METADATA_FIELDS",
     "SSP_METADATA_MARKER",
@@ -85,6 +90,7 @@ __all__ = [
     "is_experiment_definition",
     "is_fmu_metadata_definition",
     "is_fmu_model",
+    "is_sourced_metadata_definition",
     "is_ssp_metadata_definition",
     "is_ssp_model",
     "model_usage",

@@ -84,6 +84,7 @@ class AttributeKind(str, Enum):
 
     FMU_METADATA = "fmu-metadata"
     SSP_METADATA = "ssp-metadata"
+    SOURCED_METADATA = "sourced-metadata"
     PARAMETER_SET = "parameter-set"
     EXPERIMENT = "experiment"
     TYPED = "typed"
@@ -142,15 +143,19 @@ def classify_attribute(
 ) -> AttributeKind:
     """Classify one attribute by the type of its container, never by name.
 
-    The order is the dialect's precedence: FMU metadata, SSP metadata, a
-    parameter set, an experiment container, any other resolved type, then a
-    plain value attribute with no resolved type.
+    The order is the dialect's precedence: FMU metadata, SSP metadata, another
+    build-metadata family container (the ``SourcedMetadata`` base), a parameter
+    set, an experiment container, any other resolved type, then a plain value
+    attribute with no resolved type. ``FmuMetadata`` and ``SspMetadata`` also
+    reach the family base, so they must be checked first.
     """
     definition = architecture.resolve_attribute_def(attribute)
     if policy.is_fmu_metadata(architecture, definition):
         return AttributeKind.FMU_METADATA
     if policy.is_ssp_metadata(architecture, definition):
         return AttributeKind.SSP_METADATA
+    if policy.is_sourced_metadata(architecture, definition):
+        return AttributeKind.SOURCED_METADATA
     if is_parameter_set(definition):
         return AttributeKind.PARAMETER_SET
     if policy.is_experiment(
@@ -461,6 +466,10 @@ def _reject_flat_attributes(
                 policy.record_fmu_metadata(architecture, part_def)
             case AttributeKind.SSP_METADATA:
                 policy.record_ssp_metadata(architecture, part_def)
+            case AttributeKind.SOURCED_METADATA:
+                # A family container is build metadata with no reserved slot:
+                # this dialect records nothing and it never becomes a field.
+                continue
             case AttributeKind.PARAMETER_SET | AttributeKind.EXPERIMENT:
                 # Model-owned data, not a flat parameter; applied sets are
                 # validated by mapping_specs and the exporting generator.
@@ -522,7 +531,7 @@ def validate_parameter_dialect(
                     "bind them to component usages."
                 )
             case _:
-                # Set usages, experiment containers, and other value attributes
-                # are resolved by the parameter/bind validation, which reports
-                # role errors precisely.
+                # Set usages, experiment containers, family metadata, and other
+                # value attributes are resolved by the parameter/bind
+                # validation, which reports role errors precisely.
                 continue
