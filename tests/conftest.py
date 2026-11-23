@@ -51,6 +51,7 @@ FILE_LEVELS: dict[str, tuple[str, ...]] = {
     "test_fixture_policy.py": ("static",),
     "test_inheritance.py": ("unit",),
     "test_inherited_consumers.py": ("unit",),
+    "test_interop_definitions.py": ("unit",),
     "test_layering.py": ("static",),
     "test_metadata_dialects.py": ("unit",),
     "test_metadata_roles.py": ("unit",),

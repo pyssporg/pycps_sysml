@@ -1,6 +1,5 @@
     package Ports {
-      port def ParameterInterface;
-      attribute def ParameterSet;
+      private import PysspCore::*;
 
       port def Params :> ParameterInterface {
         attribute gain : Real;

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.model import Architecture, load
 from pycps_sysml2.parameters.dialect.composition import has_parameter_dialect
 from pycps_sysml2.parameters.dialect.declarations import (
@@ -57,7 +58,7 @@ def _model(
 def _load(tmp_path: Path, text: str) -> Architecture:
     architecture_dir = tmp_path / "arch"
     write_model(architecture_dir / "model.sysml", text)
-    return load(architecture_dir)
+    return load(architecture_dir, core_definitions())
 
 
 def test_parameter_interface_members_are_declarations(tmp_path: Path) -> None:

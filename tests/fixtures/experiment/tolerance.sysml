@@ -1,11 +1,5 @@
 package ExperimentTolerance {
-  attribute def DefaultExperiment {
-    attribute startTime : Real;
-    attribute stopTime : Real;
-    attribute stepSize : Real;
-    attribute tolerance : Real;
-  }
-  attribute def Experiment :> DefaultExperiment;
+  private import PysspCore::*;
 
   attribute def Tuned :> Experiment {
     attribute startTime = 0.0;

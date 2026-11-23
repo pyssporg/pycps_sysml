@@ -1,11 +1,9 @@
 package Fmu {
-  attribute def FmuMetadata {
-    attribute source : String;
-  }
+  private import PysspCore::*;
+
   attribute def CompFmu :> FmuMetadata {
     attribute source = "build/fmus/Comp.fmu";
   }
-  part def FmuModel;
   part def Comp :> FmuModel {
     attribute fmu_meta : CompFmu;
   }

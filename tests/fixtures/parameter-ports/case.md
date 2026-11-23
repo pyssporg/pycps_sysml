@@ -14,7 +14,9 @@ All paths are relative to this directory.
 | `connected-ports.sysml` | complete document: two parameter ports wired with `connect` |
 
 `template.sysml` is filled per test by `render_fixture` with `$port`, `$markers`,
-`$interface_decl`, `$interface_members`, and `$COMPOSITION_NAME`. It carries the
+`$interface_decl`, `$interface_members`, and `$COMPOSITION_NAME`. It imports
+`PysspCore::*`; `$markers` is empty unless a case deliberately mis-declares a
+marker, and the shipped root supplies the real definitions. It carries the
 package scaffolding that would otherwise be repeated in every test body.
 
 The short `port`, `markers`, `interface_decl`, and `interface_members`
@@ -35,6 +37,7 @@ is not asserted here.
 | --- | --- | --- |
 | 2026-10-28 | Template and document moved out of the test module | Test bodies carried escaped document text |
 | 2026-11-05 | Copied into this library, artifact assertions removed | The dialect reader was extracted from the SSP toolchain |
+| 2026-11-23 | Load the shipped `PysspCore` markers | The fixtures redeclared the marker vocabulary instead of including its roots |
 
 ## Provenance
 

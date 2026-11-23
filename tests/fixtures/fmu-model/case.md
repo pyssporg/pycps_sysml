@@ -23,3 +23,4 @@ an FMU component.
 | Date | Change | Reason |
 | --- | --- | --- |
 | 2026-11-05 | Case record and `component.sysml` added | The direct `:> FmuModel` marker replaced the `Fmu` composition root; the three rejection shapes are reviewable SysML, not a Python literal |
+| 2026-11-23 | Import the shipped `FmuModel`/`FmuMetadata` | The document copied the core role marker and metadata schema instead of including the shipped roots |

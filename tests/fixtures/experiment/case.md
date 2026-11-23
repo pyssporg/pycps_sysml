@@ -10,13 +10,15 @@ case carries two containers on one exported part, which is always rejected.
 | Path | Case |
 | --- | --- |
 | `baseline.sysml` | One analysis carrying an `Experiment` subtype with all three values |
-| `defaults.sysml` | `DefaultExperiment` and `Experiment` markers; one exported part and three analyses |
+| `defaults.sysml` | Shipped `DefaultExperiment` and `Experiment` containers; one exported part and three analyses |
 | `multiple.sysml` | Two experiment containers on the same exported part |
 | `tolerance.sysml` | Optional `tolerance`: one authored, one absent, one non-positive |
 
 ## What this case proves
 
-`read_experiment` reads `startTime` and `stopTime` from either container kind,
+The documents import `PysspCore::*`; `DefaultExperiment` and `Experiment` come
+from the shipped vocabulary rather than a local copy, so the case cannot drift
+from `core.sysml`. `read_experiment` reads `startTime` and `stopTime` from either container kind,
 returns `step_size is None` when no `stepSize` is authored, and still reads a
 `stepSize` authored on a type that specializes only `DefaultExperiment`.
 `experiment_attribute` accepts one container on an exported part with
@@ -32,3 +34,4 @@ value is kept, an absent one is `None`, and a non-positive one is rejected.
 | 2026-11-19 | Created | The experiment containers moved from name-prefixed attributes to typed definitions |
 | 2026-11-19 | Added `tolerance.sysml` | `DefaultExperiment.tolerance` is standard-backed and optional |
 | 2026-11-19 | Split `DefaultExperiment` from `Experiment` | SSP's element has only start/stop; FMI's adds optional step size and tolerance |
+| 2026-11-23 | Load the shipped containers instead of copying them | The local copies had drifted: `DefaultExperiment` carried `stepSize`/`tolerance`, which `core.sysml` does not declare |

@@ -1,10 +1,5 @@
 package ExperimentDefaults {
-  attribute def DefaultExperiment {
-    attribute startTime : Real;
-    attribute stopTime : Real;
-    attribute stepSize : Real;
-  }
-  attribute def Experiment :> DefaultExperiment;
+  private import PysspCore::*;
 
   attribute def OnlyDefaults :> DefaultExperiment {
     attribute startTime = 0.0;
@@ -22,13 +17,9 @@ package ExperimentDefaults {
     attribute stepSize = 0.5;
   }
 
-  part def SspModel;
-
   part def Plant :> SspModel {
     attribute defaults : OnlyDefaults;
   }
-
-  part def Analysis;
 
   part def baseline :> Analysis {
     attribute defaults : OnlyDefaults;

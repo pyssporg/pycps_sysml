@@ -41,6 +41,7 @@ effective ports.
 | 2026-11-19 | Created | Evidence that consumer accessors see inherited members. |
 | 2026-11-19 | Extended | Cover inherited ports, deep interface markers, subparts, and mapping members. |
 | 2026-11-19 | Extended | Cover inherited FMU subparts, analysis model usages and variation points, and body connections to inherited ports. |
+| 2026-11-23 | Load the shipped vocabulary | The fixture redeclared every `PysspCore` role, metadata, and parameter definition; it now imports the shipped roots instead |
 
 ## Provenance
 

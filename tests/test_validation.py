@@ -44,13 +44,23 @@ def _load(tmp_path: Path, case: str) -> Architecture:
         architecture_dir / "model.sysml",
         fixture_text(f"validation/{case}"),
     )
+    return load(architecture_dir, core_definitions())
+
+
+def _load_local(tmp_path: Path, case: str) -> Architecture:
+    """Load without the shipped roots: the case supplies its own vocabulary."""
+    architecture_dir = tmp_path / case.removesuffix(".sysml")
+    write_model(
+        architecture_dir / "model.sysml",
+        fixture_text(f"validation/{case}"),
+    )
     return load(architecture_dir)
 
 
 def _load_fixture(tmp_path: Path, relative: str) -> Architecture:
     architecture_dir = tmp_path / "fixture"
     write_model(architecture_dir / "model.sysml", fixture_text(relative))
-    return load(architecture_dir)
+    return load(architecture_dir, core_definitions())
 
 
 def _codes(report: ValidationReport) -> list[str]:
@@ -78,7 +88,7 @@ def test_without_a_composition_the_parameter_check_is_not_run(
 
 
 def test_a_missing_role_marker_is_reported(tmp_path: Path) -> None:
-    report = validate(_load(tmp_path, "role-marker.sysml"))
+    report = validate(_load_local(tmp_path, "role-marker.sysml"))
 
     assert _codes(report) == ["role-markers"]
     assert "Role marker 'SspModel'" in report.issues[0].message
@@ -86,7 +96,7 @@ def test_a_missing_role_marker_is_reported(tmp_path: Path) -> None:
 
 
 def test_a_marker_on_the_wrong_kind_is_reported(tmp_path: Path) -> None:
-    report = validate(_load(tmp_path, "marker-kind.sysml"))
+    report = validate(_load_local(tmp_path, "marker-kind.sysml"))
 
     assert _codes(report) == ["marker-kinds"]
     assert "must be port defs" in report.issues[0].message

@@ -25,10 +25,12 @@ the test on purpose: they are the case, not the document.
 
 ## What this case proves
 
-The set pins the documented parameter dialect: marker definitions, parameter
-ports, applied and unapplied sets, per-member and whole-object binds, and the
-mapping specs derived from them. The documents exist because a change to that
-dialect has to be reviewable as SysML, not only as a diff in a test body.
+The set pins the documented parameter dialect: shipped marker definitions,
+parameter ports, applied and unapplied sets, per-member and whole-object binds,
+and the mapping specs derived from them. The documents import `PysspCore::*`;
+no fixture declares `ParameterInterface` or `ParameterSet` itself. The documents
+exist because a change to that dialect has to be reviewable as SysML, not only
+as a diff in a test body.
 
 ## Update history
 
@@ -36,6 +38,7 @@ dialect has to be reviewable as SysML, not only as a diff in a test body.
 | --- | --- | --- |
 | 2026-10-28 | Documents moved out of the test module | Every test body started with an escaped document |
 | 2026-11-05 | Copied into this library, artifact assertions removed | The dialect reader was extracted from the SSP toolchain |
+| 2026-11-23 | Load the shipped `PysspCore` markers | The template redeclared the marker vocabulary instead of including its roots |
 
 ## Provenance
 

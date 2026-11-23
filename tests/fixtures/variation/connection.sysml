@@ -31,10 +31,11 @@ package ConnectionVariation {
   attribute def DefaultExperiment {
     attribute startTime : Real;
     attribute stopTime : Real;
-    attribute stepSize : Real;
   }
 
-  attribute def Experiment :> DefaultExperiment;
+  attribute def Experiment :> DefaultExperiment {
+    attribute stepSize : Real;
+  }
 
   attribute def SystemDefaults :> DefaultExperiment {
     attribute startTime = 0.0;

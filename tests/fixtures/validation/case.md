@@ -11,7 +11,7 @@ All paths are relative to this directory.
 
 | Path | Case |
 | --- | --- |
-| `passing.sysml` | An FMU composition whose components carry typed metadata; every check passes |
+| `passing.sysml` | An SSP composition whose component carries typed metadata; every check passes |
 | `role-marker.sysml` | `SspModel` is used as a supertype but never defined |
 | `marker-kind.sysml` | `ParameterInterface` is specialized by an attribute def, not a port def |
 | `retired-control.sysml` | A part attribute uses the retired `pyssp_implementation` |
@@ -36,6 +36,7 @@ instead of raising.
 | --- | --- | --- |
 | 2026-11-17 | Case record and eight documents added | The report entry point needs one reviewable failing shape per check |
 | 2026-11-20 | Added `fmu-marker.sysml` | The FMU marker rule now rejects a local `fmu_meta` without `FmuModel` |
+| 2026-11-23 | Load the shipped vocabulary in the documents that can | The fixtures copied `FmuMetadata`/`FmuModel` from `core.sysml`; `role-marker.sysml` and `marker-kind.sysml` stay self-contained because their failing shape is the missing or wrong-kind marker itself |
 
 ## Provenance
 

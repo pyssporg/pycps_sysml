@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.model import Architecture, load
 from pycps_sysml2.parameters.dialect.composition import parameter_bind
 from tests.fixture_files import render_fixture
@@ -31,7 +32,7 @@ def _load(
 ) -> tuple[Architecture, object]:
     path = tmp_path / "model.sysml"
     write_model(path, _model(bind_line, parts=parts))
-    architecture = load(path)
+    architecture = load(path, core_definitions())
     return architecture, architecture.get_part_def(COMPOSITION_NAME)
 
 

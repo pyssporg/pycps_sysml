@@ -1,14 +1,5 @@
 package InheritanceConsumers {
-  part def Analysis;
-  part def SspModel;
-  part def FmuModel;
-
-  attribute def DefaultExperiment {
-    attribute startTime : Real;
-    attribute stopTime : Real;
-    attribute stepSize : Real;
-  }
-  attribute def Experiment :> DefaultExperiment;
+  private import PysspCore::*;
 
   attribute def Baseline :> Experiment {
     attribute startTime = 0.0;
@@ -16,28 +7,19 @@ package InheritanceConsumers {
     attribute stepSize = 0.01;
   }
 
-  attribute def SspMetadata {
-    attribute source : String;
-  }
   attribute def LegacySsp :> SspMetadata {
     attribute source = "models/ssp/inherited";
   }
 
-  attribute def FmuMetadata {
-    attribute source : String;
-    attribute implementation : String;
-  }
   attribute def InheritedFmu :> FmuMetadata {
     attribute source = "build/fmus/Inherited.fmu";
     attribute implementation = "CoSimulation";
   }
 
-  attribute def ParameterSet;
   attribute def NominalSet :> ParameterSet {
     attribute n_waypoints = 10;
   }
 
-  port def ParameterInterface;
   port def MarkerBase :> ParameterInterface;
   port def MarkerDerived :> MarkerBase;
   port def BaseParameters :> ParameterInterface {

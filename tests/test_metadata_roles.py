@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.metadata.roles import (
     ANALYSIS_MARKER,
     DEFAULT_EXPERIMENT_MARKER,
@@ -61,6 +62,12 @@ FMU_ROLES = """package FmuRoles {
 def _load(tmp_path: Path, text: str) -> Architecture:
     write_model(tmp_path / "model.sysml", text)
     return load(tmp_path)
+
+
+def _load_with_core(tmp_path: Path, text: str) -> Architecture:
+    """Load a model that imports the shipped vocabulary instead of copying it."""
+    write_model(tmp_path / "model.sysml", text)
+    return load(tmp_path, core_definitions())
 
 
 def test_role_predicates_read_specialization_and_the_marker_itself(
@@ -158,7 +165,7 @@ def test_an_analysis_without_exactly_one_model_part_is_rejected(
 
 
 def test_experiment_is_read_from_the_effective_members(tmp_path: Path) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path, fixture_text("experiment/baseline.sysml")
     )
     analysis = architecture.get_part_def("baseline")
@@ -199,7 +206,7 @@ def test_an_analysis_must_declare_exactly_one_experiment_attribute(
 
 
 def test_default_experiment_needs_only_start_and_stop(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    architecture = _load_with_core(tmp_path, fixture_text("experiment/defaults.sysml"))
     plant = architecture.get_part_def("Plant")
 
     assert is_default_experiment_definition(
@@ -219,7 +226,7 @@ def test_default_experiment_needs_only_start_and_stop(tmp_path: Path) -> None:
 
 
 def test_tolerance_is_optional_and_must_be_positive(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, fixture_text("experiment/tolerance.sysml"))
+    architecture = _load_with_core(tmp_path, fixture_text("experiment/tolerance.sysml"))
 
     tuned = read_experiment(
         architecture, architecture.get_part_def("tuned"), required=True
@@ -249,7 +256,7 @@ def test_tolerance_is_optional_and_must_be_positive(tmp_path: Path) -> None:
 def test_experiment_is_accepted_on_an_exported_part_and_an_analysis(
     tmp_path: Path,
 ) -> None:
-    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    architecture = _load_with_core(tmp_path, fixture_text("experiment/defaults.sysml"))
 
     assert experiment_attribute(
         architecture, architecture.get_part_def("Plant"), required=False
@@ -260,7 +267,7 @@ def test_experiment_is_accepted_on_an_exported_part_and_an_analysis(
 
 
 def test_experiment_without_a_step_size_reads_as_none(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    architecture = _load_with_core(tmp_path, fixture_text("experiment/defaults.sysml"))
 
     experiment = read_experiment(
         architecture, architecture.get_part_def("unset_step"), required=True
@@ -274,7 +281,7 @@ def test_experiment_without_a_step_size_reads_as_none(tmp_path: Path) -> None:
 
 
 def test_default_experiment_may_author_a_step_size(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    architecture = _load_with_core(tmp_path, fixture_text("experiment/defaults.sysml"))
 
     experiment = read_experiment(
         architecture, architecture.get_part_def("with_step"), required=True
@@ -288,7 +295,7 @@ def test_default_experiment_may_author_a_step_size(tmp_path: Path) -> None:
 
 
 def test_more_than_one_experiment_attribute_is_rejected(tmp_path: Path) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path, fixture_text("experiment/multiple.sysml")
     )
 
@@ -301,7 +308,7 @@ def test_more_than_one_experiment_attribute_is_rejected(tmp_path: Path) -> None:
 def test_an_exported_part_needs_no_experiment_unless_it_is_required(
     tmp_path: Path,
 ) -> None:
-    architecture = _load(tmp_path, fixture_text("experiment/defaults.sysml"))
+    architecture = _load_with_core(tmp_path, fixture_text("experiment/defaults.sysml"))
     plain = architecture.get_part_def("Plant")
 
     assert experiment_attribute(architecture, plain, required=False) is not None

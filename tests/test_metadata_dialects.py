@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.metadata.fmu_metadata import (
     FmuMetadata,
     component_implementation,
@@ -62,13 +63,18 @@ def _load(tmp_path: Path, text: str) -> Architecture:
     return load(architecture_dir)
 
 
+def _load_with_core(tmp_path: Path, text: str) -> Architecture:
+    """Load a model that imports the shipped vocabulary instead of copying it."""
+    architecture_dir = tmp_path / "arch"
+    write_model(architecture_dir / "model.sysml", text)
+    return load(architecture_dir, core_definitions())
+
+
 SSP_SLOT_MODEL = """package Ssp {
-  attribute def SspMetadata { attribute source : String; }
+  private import PysspCore::*;
+
   attribute def XSsp :> SspMetadata {
     attribute source = "models/ssp/example";
-  }
-  part def SspModel {
-    attribute ssp_meta : SspMetadata;
   }
   part def X :> SspModel {
     $body
@@ -77,11 +83,11 @@ SSP_SLOT_MODEL = """package Ssp {
 
 
 SSP_MODEL = """package Ssp {
-  attribute def SspMetadata { attribute source : String; }
+  private import PysspCore::*;
+
   attribute def LegacySsp :> SspMetadata {
     attribute source = "models/ssp/example";
   }
-  part def SspModel;
   part def LegacyBody :> SspModel {
     attribute ssp_meta : LegacySsp;
   }
@@ -123,6 +129,7 @@ def test_value_less_redeclaration_inherits_the_base_value(tmp_path: Path) -> Non
         _metadata_model(
             marker="""
             attribute def FmuMetadata {
+              attribute source : String;
               attribute implementation : String = "CoSimulation";
             }
             """,
@@ -260,7 +267,7 @@ def test_metadata_marker_cannot_be_used_directly(tmp_path: Path) -> None:
 
 
 def test_inherited_fmu_slot_without_a_fill_is_no_metadata(tmp_path: Path) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path,
         render_fixture("fmu-metadata/role-slot.sysml", part_body=""),
     )
@@ -273,7 +280,7 @@ def test_inherited_fmu_slot_without_a_fill_is_no_metadata(tmp_path: Path) -> Non
 
 
 def test_inherited_fmu_slot_is_filled_by_a_same_name_usage(tmp_path: Path) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path,
         render_fixture(
             "fmu-metadata/role-slot.sysml",
@@ -291,7 +298,7 @@ def test_inherited_fmu_slot_is_filled_by_a_same_name_usage(tmp_path: Path) -> No
 def test_inherited_fmu_slot_is_skipped_for_a_differently_named_usage(
     tmp_path: Path,
 ) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path,
         render_fixture(
             "fmu-metadata/role-slot.sysml",
@@ -333,7 +340,7 @@ def test_fmu_metadata_is_recognised_by_type_not_usage_name(tmp_path: Path) -> No
 
 
 def test_ssp_metadata_resolves_its_source(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, SSP_MODEL)
+    architecture = _load_with_core(tmp_path, SSP_MODEL)
     model = architecture.get_part_def("LegacyBody")
 
     metadata = ssp_metadata(architecture, model)
@@ -343,13 +350,13 @@ def test_ssp_metadata_resolves_its_source(tmp_path: Path) -> None:
     assert is_ssp_metadata_definition(
         architecture, architecture.attribute_definitions["LegacySsp"]
     )
-    assert is_ssp_metadata_definition(
-        architecture, architecture.attribute_definitions[SSP_METADATA_MARKER]
-    )
+    marker = architecture.resolve_attribute_def(SSP_METADATA_MARKER)
+    assert marker is not None
+    assert is_ssp_metadata_definition(architecture, marker)
 
 
 def test_ssp_metadata_requires_an_ssp_model(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, SSP_MODEL)
+    architecture = _load_with_core(tmp_path, SSP_MODEL)
 
     assert ssp_metadata(architecture, architecture.get_part_def("LegacyBody"))
     with pytest.raises(ValueError, match="not marked ':> SspModel'"):
@@ -357,7 +364,7 @@ def test_ssp_metadata_requires_an_ssp_model(tmp_path: Path) -> None:
 
 
 def test_inherited_ssp_slot_without_a_fill_is_no_metadata(tmp_path: Path) -> None:
-    architecture = _load(tmp_path, SSP_SLOT_MODEL.replace("$body", ""))
+    architecture = _load_with_core(tmp_path, SSP_SLOT_MODEL.replace("$body", ""))
 
     assert ssp_metadata(architecture, architecture.get_part_def("X")) is None
 
@@ -365,7 +372,7 @@ def test_inherited_ssp_slot_without_a_fill_is_no_metadata(tmp_path: Path) -> Non
 def test_inherited_ssp_slot_is_filled_by_a_same_name_usage(
     tmp_path: Path,
 ) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path,
         SSP_SLOT_MODEL.replace("$body", "attribute ssp_meta : XSsp;"),
     )
@@ -379,7 +386,7 @@ def test_inherited_ssp_slot_is_filled_by_a_same_name_usage(
 def test_inherited_ssp_slot_is_skipped_for_a_differently_named_usage(
     tmp_path: Path,
 ) -> None:
-    architecture = _load(
+    architecture = _load_with_core(
         tmp_path,
         SSP_SLOT_MODEL.replace("$body", "attribute other : XSsp;"),
     )

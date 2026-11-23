@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.model import Architecture, load
 from pycps_sysml2.parameters.dialect.composition import validate_parameter_dialect
 from pycps_sysml2.parameters.dialect.declarations import (
@@ -28,10 +29,7 @@ from tests.testhelpers import COMPOSITION_NAME, write_model
 def _model(
     *,
     port: str = "in port parameters : Params;",
-    markers: str = (
-        "port def ParameterInterface;\n"
-        "  attribute def ParameterSet;"
-    ),
+    markers: str = "",
     interface_decl: str = "port def Params :> ParameterInterface",
     interface_members: str = (
         "attribute gain : Real = 2.0;\n"
@@ -50,6 +48,13 @@ def _model(
 
 
 def _load(tmp_path: Path, text: str) -> Architecture:
+    architecture_dir = tmp_path / "arch"
+    write_model(architecture_dir / "model.sysml", text)
+    return load(architecture_dir, core_definitions())
+
+
+def _load_local(tmp_path: Path, text: str) -> Architecture:
+    """Load without the shipped roots: a model that mis-declares a marker itself."""
     architecture_dir = tmp_path / "arch"
     write_model(architecture_dir / "model.sysml", text)
     return load(architecture_dir)
@@ -147,7 +152,7 @@ def test_attribute_bag_is_rejected(tmp_path: Path) -> None:
 
 def test_attribute_marker_is_rejected(tmp_path: Path) -> None:
     """ParameterInterface must be a port def, not an attribute def."""
-    architecture = _load(
+    architecture = _load_local(
         tmp_path,
         _model(
             markers=(
@@ -162,7 +167,8 @@ def test_attribute_marker_is_rejected(tmp_path: Path) -> None:
 
 
 MISNAMED_INTERFACE_MODEL = """package Ports {
-  port def ParameterInterface;
+  private import PysspCore::*;
+
   port def Gains :> ParameterInterface { attribute k : Real; }
   part def Comp {
     in port gains : Gains;

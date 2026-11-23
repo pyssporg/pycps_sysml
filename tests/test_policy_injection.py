@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.metadata.roles import RolePolicy
 from pycps_sysml2.model import Architecture, load
 from pycps_sysml2.parameters.dialect.composition import (
@@ -72,7 +73,7 @@ FMU_COMPONENT_MODEL = fixture_text("fmu-model/component.sysml")
 
 def _load(tmp_path: Path, text: str) -> Architecture:
     write_model(tmp_path / "model.sysml", text)
-    return load(tmp_path)
+    return load(tmp_path, core_definitions())
 
 
 def _stub_analysis(_architecture: Architecture, _definition) -> bool:

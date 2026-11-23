@@ -1,4 +1,5 @@
     package Ports {
+      private import PysspCore::*;
       $markers
 
       $interface_decl {

@@ -31,6 +31,7 @@ port-to-port binds, and ignores binds that do not touch a parameter port.
 | --- | --- | --- |
 | 2026-10-28 | Template moved out of the test module | Test bodies carried escaped document text |
 | 2026-11-05 | Copied into this library | The bind resolver was extracted from the SSP toolchain |
+| 2026-11-23 | Load the shipped `PysspCore` markers | The template redeclared the marker vocabulary instead of including its roots |
 
 ## Provenance
 

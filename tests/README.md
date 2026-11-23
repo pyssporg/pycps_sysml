@@ -6,8 +6,9 @@ Two rules decide where a test belongs and what its green means.
   the fixture it needs lives beside it under `tests/fixtures/<subject>/`.
 - **Marker = level.** The level says what a passing run proves, not how long the
   test takes. The level is declared once per file in `FILE_LEVELS`
-  (`tests/conftest.py`) and applied at collection, so a new test file cannot
-  arrive without one: `test_layering.py` fails until the file is listed.
+  (`tests/conftest.py`) and applied at collection; a file that is not listed
+  falls back to `unit`, and `test_layering.py` fails on a `FILE_LEVELS` entry
+  that names no file.
 
 ## Levels
 
@@ -17,7 +18,7 @@ Two rules decide where a test belongs and what its green means.
 | `unit` | one object behaves; no generated artifact involved | `python -m pytest -m unit` |
 | `component` | a generated artifact (SysML text or a built document) is the unit under test | `python -m pytest -m component` |
 | `contract` | two directions agree (round-trip, sync) | `python -m pytest -m contract` |
-| `system` | an installed entry point was driven end to end | `python -m pytest -m system` |
+| `system` | the public API was driven end to end as a consumer would | `python -m pytest -m system` |
 | `slow` | excluded from the default CI subset, run on purpose | `python -m pytest -m slow` |
 
 `python -m pytest` runs everything; CI runs `python -m pytest -m "not slow"`.

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from pycps_sysml2 import core_definitions
 from pycps_sysml2.metadata.fmu_metadata import (
     FmuMetadata,
     fmu_metadata,
@@ -40,7 +41,7 @@ from tests.testhelpers import write_model
 def _load(tmp_path: Path) -> Architecture:
     path = tmp_path / "inheritance-consumers" / "consumers.sysml"
     write_model(path, fixture_text("inheritance-consumers/consumers.sysml"))
-    return load(path)
+    return load(path, core_definitions())
 
 
 def test_derived_analysis_reads_the_inherited_experiment(tmp_path: Path) -> None:

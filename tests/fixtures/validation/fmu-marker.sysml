@@ -1,9 +1,6 @@
 package Validation {
-  part def FmuModel;
-  attribute def FmuMetadata {
-    attribute source : String;
-    attribute implementation : String;
-  }
+  private import PysspCore::*;
+
   attribute def ComponentFmu :> FmuMetadata {
     attribute source = "build/fmus/Component.fmu";
     attribute implementation = "CoSimulation";

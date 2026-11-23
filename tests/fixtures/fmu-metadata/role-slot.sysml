@@ -1,16 +1,9 @@
 package Example {
-  attribute def FmuMetadata {
-    attribute source : String;
-    attribute implementation : String;
-  }
+  private import PysspCore::*;
 
   attribute def XFmu :> FmuMetadata {
     attribute source = "build/fmus/X.fmu";
     attribute implementation = "CoSimulation";
-  }
-
-  part def FmuModel {
-    attribute fmu_meta : FmuMetadata;
   }
 
   part def X :> FmuModel {
