@@ -27,5 +27,5 @@ never sysmlpy objects; nothing below `metadata/` imports a marker.
 **Non-goals.** No artifact emission: no SSD, SSV, SSM, SSP, modelDescription, C
 header, or FMU packaging. No `pyssp_standard` dependency, direct or transitive.
 Not a SysML v2 conformance suite or a general SysML toolchain. No FMI authoring
-attributes in v0.1.0 (guid, modelName override, capabilities, units, declared
+attributes (guid, modelName override, capabilities, units, declared
 causality), nor artifact-to-SysML synthesis, which needs `pyssp_standard`.

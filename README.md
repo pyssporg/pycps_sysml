@@ -14,7 +14,7 @@ policies. A consumer that needs SysML knowledge installs this package; a
 consumer that needs an artifact installs an implementer.
 
 It is not a SysML v2 conformance suite, not a general SysML toolchain, and not a
-`pyssp_standard` wrapper. v0.1.0 carries no FMI authoring attributes.
+`pyssp_standard` wrapper. 0.4.0 carries no FMI authoring attributes.
 
 ## Install
 
@@ -34,11 +34,11 @@ source venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-Requires Python 3.10 or newer; CI runs 3.11 and 3.12.
+Requires Python 3.11 or newer; CI runs 3.11 and 3.12.
 
 ## No CLI
 
-v0.1.0 ships no console script. There is no entry point, no
+0.4.0 ships no console script. There is no entry point, no
 `python -m pycps_sysml2`, and nothing installed on `PATH`: the Python API is the
 surface.
 
@@ -144,7 +144,7 @@ vocabulary may redeclare it, and the reader is permissive.
 - Dialect limits: one `parameters` port per part, tuple-valued list attributes,
   and `metadata`/`comment` reserved as words.
 - FMI authoring attributes (guid policy, modelName override, capabilities, units,
-  declared causality) are out of scope for v0.1.0; `pyfmi_interfaces` derives them.
+  declared causality) are out of scope for 0.4.0; `pyfmi_interfaces` derives them.
 
 ## Development
 
@@ -155,5 +155,6 @@ python -m pytest                    # includes slow
 python -m build                     # wheel and sdist
 ```
 
-Intent, architecture, and the dialect inventory live in `docs/breakdown/`;
-`AGENTS.md` states the rules a change must satisfy.
+Intent, architecture, and the dialect inventory live in
+[`docs/breakdown/`](docs/breakdown/); [`AGENTS.md`](AGENTS.md) states the rules
+a change must satisfy.

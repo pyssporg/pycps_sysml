@@ -95,7 +95,7 @@ none.
 
 ## Environment
 
-- Python >= 3.10; CI runs 3.11 and 3.12.
+- Python >= 3.11; CI runs 3.11 and 3.12.
 - `python3 -m venv venv`, `source venv/bin/activate`,
   `pip install -e ".[dev]"`.
 - Tests: `python3 -m pytest -m "not slow"` (the CI gate); a bare

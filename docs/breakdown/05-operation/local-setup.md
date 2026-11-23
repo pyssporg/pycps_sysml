@@ -9,7 +9,7 @@ status: current
 
 # Local setup
 
-Python 3.10 or newer; CI covers 3.11 and 3.12. Work in a repository-local venv.
+Python 3.11 or newer; CI covers 3.11 and 3.12. Work in a repository-local venv.
 
 ```bash
 python3 -m venv venv
@@ -20,7 +20,7 @@ python -c "import pycps_sysml2; print(pycps_sysml2.__version__)"
 
 The `dev` extra is `pytest`, `ruff`, and `build`. Runtime dependencies are the
 hard `sysmlpy==0.96.4` pin (INFO-006) and `pyssp-sysml-definitions>=0.1.0` for
-the shared vocabulary. The install provides no console script: v0.1.0 ships the
+the shared vocabulary. The install provides no console script: 0.4.0 ships the
 Python API only.
 
 Before a change lands:

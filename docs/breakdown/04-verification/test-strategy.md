@@ -18,15 +18,15 @@ evidence for, not how long it runs.
 | `unit` | one object's behaviour: parser values, loader merge, configuration capture, resolution, constraints, report collection |
 | `component` | a produced document is the unit: the exported SysML text is compared as a whole |
 | `contract` | two directions agree: export then reload, constraint capture then evaluation |
-| `system` | the public API is driven as a consumer would, from the installed package |
+| `system` | the public API is driven as a consumer would, in a subprocess |
 | `slow` | not part of the default CI subset: whole-tree sweeps and build checks |
 
 **Level map.** `tests/conftest.py` holds `FILE_LEVELS`, a file-to-markers map.
 `pytest_collection_modifyitems` applies those markers and stashes the per-node
-map in `COLLECTED_LEVELS`. `tests/test_layering.py` fails when a collected test
-carries no level or a level the map does not declare, so a new test file cannot
-arrive undeclared. `slow` never appears in the map: it is a time marker applied
-to individual tests.
+map in `COLLECTED_LEVELS`. A file that is not listed falls back to `unit`;
+`tests/test_layering.py` fails when a `FILE_LEVELS` entry names no file and when
+a test carries a level the map does not declare. `slow` never appears in the
+map: it is a time marker applied to individual tests.
 
 **Gate.** CI runs `ruff check src tests examples`, then `python -m pytest -m "not slow"`
 on Python 3.11 and 3.12, and fails if the run leaves the checkout dirty. A bare

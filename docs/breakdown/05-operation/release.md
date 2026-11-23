@@ -16,11 +16,11 @@ status: current
 
 **Sequence.**
 
-1. Set `__version__ = "0.1.0"` in `src/pycps_sysml2/__init__.py` and regenerate
+1. Set `__version__ = "<version>"` in `src/pycps_sysml2/__init__.py` and regenerate
    the registers if the version appears in prose.
 2. Run the gate: `ruff check src tests examples`, `python -m pytest -m "not slow"`,
    `python -m build --wheel --sdist`.
-3. Commit as `release: v0.1.0`, then `git tag v0.1.0` and
+3. Commit as `release: v<version>`, then `git tag v<version>` and
    `git push origin main --tags`.
 
 **What the tag starts.** `.github/workflows/wheels.yml` builds
