@@ -1,11 +1,14 @@
 # Example 09: Packages and export
 
-An included root is a separate package: `load(MODEL, VOCAB, core_definitions())` merges its definitions, but they stay visible only through an explicit `private import Shared::*;`. Definitions from another package are stored under qualified keys such as `Shared::Sensor`, while `resolve` and `get_part_def` accept either the bare or the qualified name. `architecture.export_declared()` returns `{filename: text}` for the architecture's own package only, so the included vocabulary never appears and `run.py` passes it again when reloading the export. The export text is canonicalized rather than the input text, so only an export → reload → export cycle is byte-identical. This example is repo-only and writes solely under `tempfile`.
+Shows package visibility, qualified names, and canonical export text.
 
 ## Run
 
+From the workspace root (`pyssp_dev/`), with the workspace venv active (see
+[`examples/README.md`](../README.md#setup)):
+
 ```bash
-python examples/09-packages-and-export/run.py
+python repos/pycps_sysml2/examples/09-packages-and-export/run.py
 ```
 
 ## Expected output
@@ -20,3 +23,7 @@ imports: ['PysspCore', 'Shared']
 exported files: ['model.sysml']
 round trip: identical
 ```
+
+## What the definition encodes
+
+An included root is a separate package: `load(MODEL, VOCAB, core_definitions())` merges its definitions, but they stay visible only through an explicit `private import Shared::*;`. Definitions from another package are stored under qualified keys such as `Shared::Sensor`, while `resolve` and `get_part_def` accept either the bare or the qualified name. `architecture.export_declared()` returns `{filename: text}` for the architecture's own package only, so the included package never appears and `run.py` passes it again when reloading the export. The export text is canonicalized rather than the input text, so only an export → reload → export cycle is byte-identical. This example is repo-only and writes solely under `tempfile`.

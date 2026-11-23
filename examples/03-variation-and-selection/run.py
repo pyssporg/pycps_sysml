@@ -4,8 +4,8 @@ from pathlib import Path
 
 from pycps_sysml2 import core_definitions, load
 from pycps_sysml2.parameters import (
-    ConstraintViolation,
     SSP_POLICY,
+    ConstraintViolation,
     enforce_constraints,
     evaluate,
     parse_selection,
