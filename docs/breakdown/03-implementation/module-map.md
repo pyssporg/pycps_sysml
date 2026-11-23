@@ -26,7 +26,7 @@ dataclasses, and the validation report.
 | `definitions/` | compatibility facade re-exporting `core_definitions` and `CORE_FILE` from the definitions package | `pyssp_sysml_definitions` |
 | `core/control.py`, `core/fmi_helpers.py` | the retired `pyssp_*` migration map and residual catch-all; FMI helpers | `model` |
 | `metadata/helpers.py` | the single copy of `short_name` and `specializes_marker`; the legacy attribute-only `effective_members` wrapper | `model` |
-| `metadata/roles.py`, `metadata/ssp_metadata.py`, `metadata/fmu_metadata.py` | role policy, SSP metadata, FMI metadata | `model`, `core`, `metadata.helpers` |
+| `metadata/roles.py`, `metadata/ssp_metadata.py`, `metadata/fmu_metadata.py`, `metadata/sourced_metadata.py` | role policy, SSP metadata, FMI metadata, the generic build-metadata family base | `model`, `core`, `metadata.helpers` |
 | `parameters/policy.py` | `DialectPolicy` and `SSP_POLICY` | `metadata`, `core` |
 | `parameters/configuration.py`, `variation.py`, `selection.py`, `constraints.py` | configuration capture, resolution, analysis plans, constraint evaluation | `metadata`, `core`, `model` |
 | `parameters/dialect/` | markers, declarations, composition, mapping | `metadata`, `core`, `model` |

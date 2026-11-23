@@ -46,8 +46,9 @@ SysML scopes are modelled. Unknown import targets load silently and are left to
 **Two policy objects.** `RolePolicy` (`metadata/roles.py`) binds the model,
 analysis, and FmuModel markers to their predicates; the same module owns the
 experiment recognizers. `DialectPolicy` (`parameters/policy.py`) composes a
-`RolePolicy` with the SSP/FMI metadata and experiment recognizers plus the
-retired-attribute and flat-connector rejections. `core/control.py` holds the
+`RolePolicy` with the SSP/FMI metadata recognizers, the generic
+`SourcedMetadata` family-base recognizer, and the experiment recognizers plus
+the retired-attribute and flat-connector rejections. `core/control.py` holds the
 single `RETIRED_ATTRIBUTES` map and residual `pyssp_*` catch-all: history, not
 a third policy object.
 
