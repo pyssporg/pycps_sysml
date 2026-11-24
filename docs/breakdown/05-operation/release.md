@@ -32,7 +32,7 @@ before anything is attached. On success the workflow attaches every file in
 `dist/` to the release.
 
 **Asset URL.** The wheel lives at
-`https://github.com/pyssporg/pycps_sysml2/releases/download/v<ver>/pycps_sysml2-<ver>-py3-none-any.whl`;
+`https://github.com/pyssporg/pycps_sysml/releases/download/v<ver>/pycps_sysml2-<ver>-py3-none-any.whl`;
 the tag carries the `v` and the version appears twice. Implementers pin that URL.
 
 **Verification.** Install from the URL into a clean venv and print

@@ -21,7 +21,7 @@ It is not a SysML v2 conformance suite, not a general SysML toolchain, and not a
 From the release wheel:
 
 ```bash
-pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml2/releases/download/v0.4.0/pycps_sysml2-0.4.0-py3-none-any.whl"
+pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml/releases/download/v0.4.0/pycps_sysml2-0.4.0-py3-none-any.whl"
 ```
 
 Runtime dependencies are the exact `sysmlpy==0.96.4` parser pin and
