@@ -8,7 +8,7 @@ From the workspace root (`pyssp_dev/`), with the workspace venv active (see
 [`examples/README.md`](../README.md#setup)):
 
 ```bash
-python repos/pycps_sysml2/examples/01-load-and-traverse/run.py
+python repos/pycps_sysml/examples/01-load-and-traverse/run.py
 ```
 
 ## Expected output

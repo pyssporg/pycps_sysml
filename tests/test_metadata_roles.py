@@ -10,8 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.metadata.roles import (
+from pycps_sysml import core_definitions
+from pycps_sysml.metadata.roles import (
     ANALYSIS_MARKER,
     DEFAULT_EXPERIMENT_MARKER,
     FMU_MODEL_MARKER,
@@ -30,7 +30,7 @@ from pycps_sysml2.metadata.roles import (
     require_resolved_variation,
     validate_role_markers,
 )
-from pycps_sysml2.model import Architecture, load, PartDefinition
+from pycps_sysml.model import Architecture, load, PartDefinition
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

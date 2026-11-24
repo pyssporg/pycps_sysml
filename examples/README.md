@@ -17,14 +17,14 @@ pip install --no-deps -r requirements-experimental.txt
 pip install -r requirements-thirdparty.txt
 ```
 
-`requirements-experimental.txt` already installs `pycps_sysml2` and
+`requirements-experimental.txt` already installs `pycps_sysml` and
 `pyssp_sysml_definitions` editable; `sysmlpy` comes from
 `requirements-thirdparty.txt`.
 
 ## Run
 
 ```bash
-python repos/pycps_sysml2/examples/01-load-and-traverse/run.py
+python repos/pycps_sysml/examples/01-load-and-traverse/run.py
 ```
 
 `tests/test_examples.py` runs every `run.py` in a subprocess and compares stdout

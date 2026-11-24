@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   here. `core_definitions()` and `CORE_FILE` stay as re-exports.
 - Pin the new dependency as a plain specifier because no release asset exists
   yet. Release order: `pyssp-sysml-definitions` 0.1.0 first, then
-  `pycps_sysml2` 0.4.0.
+  `pycps_sysml` 0.4.0.
 
 ## [0.3.0] - 2026-11-19
 

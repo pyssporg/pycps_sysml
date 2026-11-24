@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
-PACKAGE = PROJECT / "src" / "pycps_sysml2"
+PACKAGE = PROJECT / "src" / "pycps_sysml"
 
 #: The documented public surface. Nothing else may sit at the package root.
 ROOT_MODULES = frozenset({"__init__.py", "validation.py"})

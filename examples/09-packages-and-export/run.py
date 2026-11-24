@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions, load
+from pycps_sysml import core_definitions, load
 
 HERE = Path(__file__).resolve().parent
 MODEL = HERE / "model.sysml"

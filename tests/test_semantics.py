@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import validate
-from pycps_sysml2.model import Architecture, load
+from pycps_sysml import validate
+from pycps_sysml.model import Architecture, load
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

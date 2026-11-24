@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.model import Architecture, load
-from pycps_sysml2.parameters.dialect.composition import parameter_bind
+from pycps_sysml import core_definitions
+from pycps_sysml.model import Architecture, load
+from pycps_sysml.parameters.dialect.composition import parameter_bind
 from tests.fixture_files import render_fixture
 from tests.testhelpers import COMPOSITION_NAME, write_model
 

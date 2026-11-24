@@ -14,7 +14,7 @@ The `core.sysml` shipped by `pyssp-sysml-definitions`
 PysspCore`: markers `SspModel`, `Analysis`, `FmuModel`; `ParameterInterface`;
 `ParameterSet`; schemas `SourcedMetadata`, `FmuMetadata`, `SspMetadata`; and
 `DefaultExperiment` with `Experiment :> DefaultExperiment`. The file ships as
-package data of `pyssp-sysml-definitions`; `pycps_sysml2.definitions` is a
+package data of `pyssp-sysml-definitions`; `pycps_sysml.definitions` is a
 compatibility facade re-exporting `core_definitions` and `CORE_FILE`, so the
 historical import path and names keep working.
 
@@ -61,4 +61,4 @@ Generated and tooling fields stay out: FMI `fmiVersion`, `modelName`, `guid`, `g
 | duplicate rule | only a repeated stored key (same package and name) raises `ValueError`; another package's same bare name coexists. A repeat against a model key names the definition, kind, both sources, and the local declaration to remove, never an override; two included roots repeating a key also raise, naming both roots |
 | storage keys | bare name for the primary package (or a synthesized definition), `Pkg::Name` otherwise; `Definition.name` stays bare and every included key lands in `Architecture.included_definitions` |
 | export exclusion | `export_declared()` emits only the architecture's own package, so an included root never appears in the model's declaration text |
-| implementers | `pyssp_sysml2` exposes the merge as keyword-only `includes` (a sequence of roots), off by default; `--core-definitions` is sugar for one `core_definitions()` include |
+| implementers | `pyssp_sysml` exposes the merge as keyword-only `includes` (a sequence of roots), off by default; `--core-definitions` is sugar for one `core_definitions()` include |

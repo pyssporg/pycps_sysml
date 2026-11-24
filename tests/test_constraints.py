@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import pytest
 
-from pycps_sysml2.model import (
+from pycps_sysml.model import (
     Architecture,
     ConstraintUsage,
     PartDefinition,
     load,
 )
-from pycps_sysml2.parameters.constraints import (
+from pycps_sysml.parameters.constraints import (
     ConstraintReport,
     ConstraintResult,
     ConstraintViolation,

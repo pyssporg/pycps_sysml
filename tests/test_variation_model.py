@@ -12,10 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2.metadata import SSP_ROLES
-from pycps_sysml2.model import load
-from pycps_sysml2.parameters.selection import parse_selection
-from pycps_sysml2.parameters.variation import (
+from pycps_sysml.metadata import SSP_ROLES
+from pycps_sysml.model import load
+from pycps_sysml.parameters.selection import parse_selection
+from pycps_sysml.parameters.variation import (
     has_variation,
     resolve,
     resolve_selected,

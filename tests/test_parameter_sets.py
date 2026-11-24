@@ -9,15 +9,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.model import Architecture, load
-from pycps_sysml2.parameters.dialect.composition import has_parameter_dialect
-from pycps_sysml2.parameters.dialect.declarations import (
+from pycps_sysml import core_definitions
+from pycps_sysml.model import Architecture, load
+from pycps_sysml.parameters.dialect.composition import has_parameter_dialect
+from pycps_sysml.parameters.dialect.declarations import (
     parameter_declarations,
     parameter_interface,
 )
-from pycps_sysml2.parameters.dialect.mapping import mapping_specs
-from pycps_sysml2.parameters.policy import SSP_POLICY
+from pycps_sysml.parameters.dialect.mapping import mapping_specs
+from pycps_sysml.parameters.policy import SSP_POLICY
 from tests.fixture_files import render_fixture
 from tests.testhelpers import COMPOSITION_NAME, write_model
 

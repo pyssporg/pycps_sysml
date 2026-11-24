@@ -27,9 +27,9 @@ become. It is the first document to read, not a reference of last resort.
 
 ## Repository Focus
 
-`pycps_sysml2` is the single home of our SysML dialect: parsing, the IR,
+`pycps_sysml` is the single home of our SysML dialect: parsing, the IR,
 variation, selection, constraints, and every marker and metadata accessor for
-the SSP and the FMI dialects. `pyssp_sysml2` and `pyfmi_interfaces` implement the
+the SSP and the FMI dialects. `pyssp_sysml` and `pyfmi_interfaces` implement the
 dialect; they consume this library and emit artifacts. This repository emits
 none.
 
@@ -51,7 +51,7 @@ none.
   no `.sysml` file is bundled here. The marker-constant drift test
   (`tests/test_definition_markers.py`) must stay green.
 - **No `pyssp_standard`, direct or transitive.** It carries artifact objects,
-  which this library does not know about. `pyssp_sysml2` and `pyfmi_interfaces` are
+  which this library does not know about. `pyssp_sysml` and `pyfmi_interfaces` are
   never imported either.
 - **The layering rule.** `model` ← `core` ← `metadata` ← `parameters`;
   `parameters/dialect` above `metadata`. Nothing below `parameters` imports
@@ -90,7 +90,7 @@ none.
     never edit them by hand;
   - run `python3 $PB check --strict --root docs/breakdown` and
     `python3 $PB node-size --strict --root docs/breakdown` after edits.
-- Version lives in `src/pycps_sysml2/__init__.py` only; `pyproject.toml` is
+- Version lives in `src/pycps_sysml/__init__.py` only; `pyproject.toml` is
   dynamic and has no `[project].version`.
 
 ## Environment

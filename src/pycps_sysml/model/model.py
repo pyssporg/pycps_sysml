@@ -1,0 +1,684 @@
+"""Stable in-memory SysML v2 architecture model for pycps_sysml.
+
+This module is the repo-owned contract between the parser adapter
+(`pycps_sysml.model.parser`) and every consumer: the parameter layer, the
+metadata accessors, and every artifact generator.
+
+Design rule: nothing outside `parser.py` may import `sysmlpy`. All repo code
+works against the dataclasses below, so a sysmlpy API change can only break
+`parser.py`, and a future parser swap only touches `parser.py`.
+
+Value semantics (mirrors the retired `pycps_sysmlv2` contract):
+
+- ``Attribute.value`` is Python-native: ``None``, ``bool``, ``int``, ``float``,
+  ``str``, or a ``tuple`` for list-valued attributes.
+- Attribute types are plain names (``"Real"``, ``"Integer"``, ``"Boolean"``,
+  ``"String"``, or a custom name). Unknown/custom types degrade to ``Real``
+  where a primitive is required, matching the generators' fallback behavior.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from typing import Iterator
+
+__all__ = [
+    "Architecture",
+    "Attribute",
+    "AttributeDefinition",
+    "Binding",
+    "Connection",
+    "ConstraintDefinition",
+    "ConstraintParameter",
+    "ConstraintUsage",
+    "Definition",
+    "PartDefinition",
+    "PartUsage",
+    "PortDefinition",
+    "PortUsage",
+    "RequirementDefinition",
+    "SemanticIssue",
+    "VariantBody",
+    "VariantMember",
+    "endpoint_text",
+]
+
+# Lowercase alias map for the primitive types the generators understand.
+# Mirrors the retired SYSML_TYPE_MAP so degraded lookups behave the same.
+_TYPE_ALIASES = {
+    "real": "Real",
+    "float": "Real",
+    "float32": "Real",
+    "float64": "Real",
+    "double": "Real",
+    "integer": "Integer",
+    "int": "Integer",
+    "int8": "Integer",
+    "int32": "Integer",
+    "uint8": "Integer",
+    "uint32": "Integer",
+    "boolean": "Boolean",
+    "bool": "Boolean",
+    "string": "String",
+}
+
+
+def _primitive_from_value(value) -> str | None:
+    """Infer a primitive type name from a Python literal value."""
+    if isinstance(value, bool):
+        return "Boolean"
+    if isinstance(value, int):
+        return "Integer"
+    if isinstance(value, float):
+        return "Real"
+    if isinstance(value, str):
+        return "String"
+    return None
+
+
+@dataclass
+class Attribute:
+    """A valued or typed attribute on a part/port definition.
+
+    ``multiplicity`` is the declared range as written (``"3"``, ``"0..*"``,
+    ``"2..4"``) or ``None`` when the attribute is scalar/undeclared.
+
+    ``redefines`` keeps the features redefined by ``:>>`` (``("scenario",)``);
+    the usage keeps the inherited feature name in ``name``.
+
+    ``direction`` is the port-member direction as written (``"in"``, ``"out"``,
+    ``"inout"``) or ``None`` when the member is undirected or not a port member.
+    """
+
+    name: str
+    type_name: str | None = None
+    value: object = None
+    doc: str | None = None
+    multiplicity: str | None = None
+    redefines: tuple[str, ...] = ()
+    direction: str | None = None
+    subsets: tuple[str, ...] = ()
+
+    @property
+    def is_list(self) -> bool:
+        return isinstance(self.value, tuple)
+
+    @property
+    def effective_type_name(self) -> str | None:
+        """Declared type name, or the type inferred from the value."""
+        if self.type_name:
+            return self.type_name
+        value = self.value
+        if isinstance(value, tuple) and value:
+            value = value[0]
+        return _primitive_from_value(value)
+
+    def primitive_type_str(self) -> str:
+        """Real/Integer/Boolean/String for this attribute's element type.
+
+        List-valued attributes report the element primitive. Unknown/custom
+        types fall back to the value's primitive, then to ``Real`` — the same
+        degradation every artifact generator applies to unknown types.
+        """
+        name = self.effective_type_name
+        if name is not None:
+            primitive = _TYPE_ALIASES.get(name.strip().lower())
+            if primitive is not None:
+                return primitive
+        value = self.value
+        if isinstance(value, tuple) and value:
+            value = value[0]
+        return _primitive_from_value(value) or "Real"
+
+    def enumerator(self, start: int = 0) -> enumerate:
+        """Zero-based ``(index, value)`` enumeration; scalars are wrapped."""
+        value = self.value
+        if not isinstance(value, tuple):
+            value = (value,)
+        return enumerate(value, start=start)
+
+
+@dataclass
+class PortUsage:
+    """A port usage inside a part definition (``in port sig : Signal;``).
+
+    ``multiplicity`` is the declared occurrence range as written (``"3"``); a
+    fixed multiplicity expands the port's connectors to indexed names.
+
+    ``conjugated`` marks ``port sink : ~Signal;``: the usage is typed by the
+    conjugated definition ``Signal::'~Signal'``, whose ``in`` and ``out``
+    members are flipped. ``type_name`` stays the base definition name, so both
+    ends resolve to the same :class:`PortDefinition`.
+    """
+
+    name: str
+    direction: str | None  # "in" | "out" | "inout" | None (undirected)
+    type_name: str
+    doc: str | None = None
+    multiplicity: str | None = None
+    conjugated: bool = False
+    redefines: tuple[str, ...] = ()
+    subsets: tuple[str, ...] = ()
+
+    def effective_member_direction(self, attribute: Attribute) -> str | None:
+        """The direction a definition member takes on this usage.
+
+        Conjugation flips a member's own ``in``/``out`` direction; ``inout`` and
+        undirected members keep theirs (KerML 1.0 §8.3.3.1.2). A member without
+        its own direction falls back to the usage direction, unflipped: the
+        usage direction describes the port, not the definition's members.
+        """
+        direction = attribute.direction
+        if direction is None:
+            return self.direction
+        if self.conjugated and direction in ("in", "out"):
+            return "out" if direction == "in" else "in"
+        return direction
+
+
+@dataclass
+class PartUsage:
+    """A typed part usage inside a composition (``part src : Source;``).
+
+    ``is_variation`` marks a usage-level variation point
+    (``variation part source : SignalSource;``): the usage is the point, and its
+    alternatives live in ``variants``.
+
+    A redefinition (``part :>> source = SourceChoice::step;``) keeps the
+    inherited name in ``name`` and the redefined feature in ``redefines``. A
+    specialization (``part path :> PathChoice::nestedPath;``) stores the
+    subsetting target in ``subsets`` and inherits its type, so ``type_name`` may
+    be ``None``. ``value`` is the feature value as written (``"SourceChoice::step"``)
+    and ``body`` the usage's anonymous body, if it declares one.
+    """
+
+    name: str
+    type_name: str | None
+    doc: str | None = None
+    is_variation: bool = False
+    variants: list[VariantMember] = field(default_factory=list)
+    redefines: tuple[str, ...] = ()
+    subsets: tuple[str, ...] = ()
+    value: str | None = None
+    body: VariantBody | None = None
+
+
+def endpoint_text(part: str | None, port: str) -> str:
+    """Text form of one connection endpoint.
+
+    A ``None`` part is a port of the enclosing part def, i.e. the system
+    boundary, written without a qualifier.
+    """
+    return port if part is None else f"{part}.{port}"
+
+
+@dataclass
+class Connection:
+    """A ``connect source.port to destination.port;`` inside a part def.
+
+    An endpoint without a part (``connect gain.y to y;`` or
+    ``connect u to gain.u;``) refers to a port of the enclosing part def: the
+    connection crosses the system boundary. An artifact writer omits the
+    corresponding element for such an endpoint.
+    """
+
+    name: str
+    source_part: str | None
+    source_port: str
+    destination_part: str | None
+    destination_port: str
+    doc: str | None = None
+
+    @property
+    def key(self) -> str:
+        return (
+            f"{endpoint_text(self.source_part, self.source_port)}"
+            f"->{endpoint_text(self.destination_part, self.destination_port)}"
+        )
+
+
+@dataclass
+class Binding:
+    """A ``bind source.feature = target.feature;`` inside a part def.
+
+    Endpoints are stored as feature-name chains **as written**: ``source`` is
+    the left-hand side, ``target`` the right-hand side. SysML ``bind`` is
+    equality, but the parameter dialect fixes the orientation, putting the
+    parameter port on the left and the set usage on the right::
+
+        bind autopilot.parameters.waypointCount = nominal.waypointCount;
+
+    :func:`pycps_sysml.parameters.parameter_bind` resolves the endpoints by
+    role and rejects the reversed form.
+    """
+
+    source: tuple[str, ...]
+    target: tuple[str, ...]
+    name: str | None = None
+
+    @property
+    def key(self) -> str:
+        return f"{'.'.join(self.source)}={'.'.join(self.target)}"
+
+
+@dataclass
+class VariantBody:
+    """The members a usage's anonymous body (``name { ... }``) declares.
+
+    It carries the body's own subparts, connections, attribute usages, and the
+    bindings it would apply. It is reused for two shapes:
+
+    - a variant body (``variant part name { ... }``), the implicit anonymous
+      definition of that variant usage; on selection, attributes and bindings
+      are merged into the definition that owns the variation usage, so
+      ``values.height``-style references resolve there; see
+      :func:`pycps_sysml.parameters.variation.resolve`.
+    - a configuration body on a non-variant part usage
+      (``part path :> PathChoice::nestedPath { ... }``); it is the usage's own
+      definition holding nested usages, connections, and bindings. It is not
+      selectable and is captured as model structure only.
+
+    ``connections`` is keyed by :attr:`Connection.key`, ``parts`` and
+    ``attributes`` by name, all in declaration order.
+    """
+
+    parts: dict[str, PartUsage] = field(default_factory=dict)
+    connections: dict[str, Connection] = field(default_factory=dict)
+    bindings: list[Binding] = field(default_factory=list)
+    attributes: dict[str, Attribute] = field(default_factory=dict)
+
+
+@dataclass
+class VariantMember:
+    """One ``variant`` member of a variation point.
+
+    ``kind`` is the SysML usage kind of the member (``"part"`` or
+    ``"attribute"``); it keeps room for ``connect`` and ``bind`` variants
+    without changing this contract. ``type_name`` is the declared type as
+    written, or ``None`` for a variant with a body but no type. ``body`` is the
+    member's own definition body, or ``None`` for a plain typed variant.
+    """
+
+    name: str
+    kind: str
+    type_name: str | None = None
+    body: VariantBody | None = None
+
+
+@dataclass
+class Definition:
+    """Common base for top-level package definitions.
+
+    ``name`` is always the bare declared name: artifact surfaces (SSD names,
+    ``<PartDef>.fmu``, C header stems, ``modelName``) never see a package
+    qualifier. ``package`` records the declaring package so
+    :class:`Architecture` can keep same-named definitions of different packages
+    apart; it is ``None`` for a synthesized definition.
+    """
+
+    name: str
+    doc: str | None = None
+    source_file: str | None = None
+    package: str | None = None
+
+
+@dataclass
+class ConstraintParameter:
+    """One ``in`` parameter of a constraint def or constraint usage.
+
+    On a definition, ``type_name`` is the declared parameter type and ``value``
+    is ``None``. On a usage, ``value`` is the bound reference (``in chosenSource
+    = source``) and ``type_name`` is ``None``; the reference resolves against
+    the usage's owner path at evaluation time.
+    """
+
+    name: str
+    type_name: str | None = None
+    value: str | None = None
+
+
+@dataclass
+class ConstraintDefinition(Definition):
+    """A ``constraint def`` with typed parameters and a boolean expression."""
+
+    parameters: dict[str, ConstraintParameter] = field(default_factory=dict)
+    expression: str | None = None
+
+
+@dataclass
+class ConstraintUsage:
+    """A ``constraint`` usage, optionally asserted.
+
+    ``name`` is the usage name (``None`` for an anonymous assert target), and
+    ``type_name`` the constraint definition it is typed by. ``bindings`` maps
+    each ``in`` parameter to the reference it is bound to, in source order.
+    """
+
+    name: str | None
+    type_name: str | None = None
+    bindings: dict[str, str] = field(default_factory=dict)
+    expression: str | None = None
+    asserted: bool = False
+    negated: bool = False
+    source_file: str | None = None
+
+
+@dataclass
+class PortDefinition(Definition):
+    """A ``port def`` with ordered attributes and optional supertypes."""
+
+    attributes: dict[str, Attribute] = field(default_factory=dict)
+    specializes: tuple[str, ...] = ()
+
+
+@dataclass
+class AttributeDefinition(Definition):
+    """An ``attribute def`` with ordered members and optional supertypes.
+
+    Parameter sets are ``attribute def``s marked ``:> ParameterSet``; parameter
+    interfaces are ``port def``s marked ``:> ParameterInterface``. A role is
+    established by specialization and by how the definition is used.
+
+    ``is_variation`` marks an attribute-level variation point
+    (``variation attribute def ScenarioChoice``). Its alternatives live in
+    ``variants``, never in ``attributes``: a variant declares one alternative
+    parameter set, not a member every use carries. A variant's ``type_name``
+    names the attribute definition the usage takes on when selected.
+    """
+
+    attributes: dict[str, Attribute] = field(default_factory=dict)
+    specializes: tuple[str, ...] = ()
+    is_variation: bool = False
+    variants: list[VariantMember] = field(default_factory=list)
+
+
+@dataclass
+class PartDefinition(Definition):
+    """A ``part def`` with attributes, ports, subparts, and connections.
+
+    ``is_variation`` marks a definition-level variation point
+    (``variation part def SourceChoice``). Its alternatives live in ``variants``,
+    never in ``parts``: a variant is a declaration of what may be selected, not
+    a member every composition contains.
+    """
+
+    attributes: dict[str, Attribute] = field(default_factory=dict)
+    ports: dict[str, PortUsage] = field(default_factory=dict)
+    parts: dict[str, PartUsage] = field(default_factory=dict)
+    connections: dict[str, Connection] = field(default_factory=dict)
+    bindings: list[Binding] = field(default_factory=list)
+    specializes: tuple[str, ...] = ()
+    is_variation: bool = False
+    variants: list[VariantMember] = field(default_factory=list)
+    constraints: list[ConstraintUsage] = field(default_factory=list)
+
+
+@dataclass
+class RequirementDefinition(Definition):
+    """A ``requirement def`` whose doc comment is its text."""
+
+    text: str | None = None
+
+
+@dataclass(frozen=True)
+class SemanticIssue:
+    """One opt-in semantic finding about the architecture.
+
+    ``code`` is the repo-owned stable string; ``message`` keeps the analyzer's
+    text, which names the offending element; ``subject`` is the best-effort
+    element name or reference the issue is about.
+    """
+
+    code: str
+    message: str
+    subject: str | None = None
+
+
+@dataclass
+class Architecture:
+    """A merged SysML v2 architecture spanning one or more packages.
+
+    Member dicts are insertion-ordered; ``connections`` is keyed by
+    ``Connection.key`` (``"src.src_port->dst.dst_port"``).
+
+    Package qualification is storage-only. A definition of the architecture's
+    own package (or with no package at all, i.e. synthesized) is keyed by its
+    bare :attr:`Definition.name`; a definition of any other package is keyed
+    ``"<package>::<name>"``. Definition ``.name`` stays bare everywhere. A
+    single-package model therefore keeps exactly the bare keys it had before.
+
+    ``included_definitions`` holds the *stored keys* supplied by included roots,
+    not authored in the model. Consumers such as the exporter skip them.
+
+    ``imports`` maps an imported package name to the members it exposes, or
+    ``None`` for a ``::*`` wildcard. It gates cross-package visibility: a
+    qualified definition is reachable only through a matching entry, so a bare
+    name never falls back to a package the model did not import. Visibility is
+    architecture-wide, not per importing file — every collected import applies
+    to the whole merged architecture. That is a deliberate simplification until
+    SysML scopes are modelled.
+
+    ``semantic_issues`` stays empty unless the caller opted into analysis with
+    ``load(..., analyze_semantics=True)``; see
+    :func:`pycps_sysml.model.loader.load`.
+    """
+
+    package_name: str
+    part_definitions: dict[str, PartDefinition] = field(default_factory=dict)
+    port_definitions: dict[str, PortDefinition] = field(default_factory=dict)
+    attribute_definitions: dict[str, AttributeDefinition] = field(default_factory=dict)
+    requirement_definitions: dict[str, RequirementDefinition] = field(
+        default_factory=dict
+    )
+    constraint_definitions: dict[str, ConstraintDefinition] = field(
+        default_factory=dict
+    )
+    included_definitions: set[str] = field(default_factory=set)
+    imports: dict[str, frozenset[str] | None] = field(default_factory=dict)
+    semantic_issues: tuple[SemanticIssue, ...] = ()
+
+    # -- namespace ---------------------------------------------------------
+
+    def stored_key(self, definition: Definition) -> str:
+        """The namespace key a definition is stored under.
+
+        A definition of the architecture's package — or an unpackage
+        synthesized one — stays bare; every other package qualifies it.
+        """
+        if definition.package in (None, self.package_name):
+            return definition.name
+        return f"{definition.package}::{definition.name}"
+
+    def _imported(self, package: str, member: str | None = None) -> bool:
+        """Whether *package* exposes every member or just *member*.
+
+        An import entry of ``None`` is a ``::*`` wildcard; otherwise only the
+        named members are visible. A package with no entry exposes nothing.
+        """
+        if package not in self.imports:
+            return False
+        members = self.imports[package]
+        return members is None or (member is not None and member in members)
+
+    def _visible_key(self, key: str) -> bool:
+        """Whether a stored qualified key is reachable through an import."""
+        if "::" not in key:
+            return True
+        package, member = key.rsplit("::", 1)
+        return self._imported(package, member)
+
+    def resolve(
+        self, definitions: Mapping[str, Definition], name: str
+    ) -> Definition | None:
+        """The definition *name* refers to in one definition namespace.
+
+        An exact stored-key hit always wins, provided an imported package
+        exposes it. A bare name falls back to the *visible* qualified
+        definitions: one match returns it, several raise a ``ValueError``
+        naming every candidate, none returns ``None``. An explicitly qualified
+        name that names an existing definition in a package the architecture
+        does not import raises, because the author most likely forgot the
+        import; a qualified name that matches nothing stays ``None``, leaving
+        unknown targets to ``analyze``.
+        """
+        if name in definitions:
+            if "::" in name and not self._visible_key(name):
+                package = name.rsplit("::", 1)[0]
+                raise ValueError(
+                    f"Definition '{name}' is in package '{package}', which is "
+                    "not imported; add "
+                    f"'private import {package}::*;' to make it visible"
+                )
+            return definitions[name]
+        if "::" in name:
+            return None
+        candidates = [
+            key
+            for key in definitions
+            if "::" in key
+            and self._visible_key(key)
+            and key.rsplit("::", 1)[1] == name
+        ]
+        if not candidates:
+            return None
+        if len(candidates) > 1:
+            raise ValueError(
+                f"Ambiguous definition name '{name}'; qualify it with one of: "
+                f"{', '.join(sorted(candidates))}"
+            )
+        return definitions[candidates[0]]
+
+    def has_definition(self, definitions: Mapping[str, Definition], name: str) -> bool:
+        """Whether *name* resolves to a definition in that namespace."""
+        return self.resolve(definitions, name) is not None
+
+    # -- lookups -----------------------------------------------------------
+
+    def get_part_def(self, name: str) -> PartDefinition:
+        definition = self.resolve(self.part_definitions, name)
+        if not isinstance(definition, PartDefinition):
+            raise KeyError(f"Definition not found in namespace: Key:{name}")
+        return definition
+
+    def get_port_def(self, name: str) -> PortDefinition:
+        definition = self.resolve(self.port_definitions, name)
+        if not isinstance(definition, PortDefinition):
+            raise KeyError(f"Definition not found in namespace: Key:{name}")
+        return definition
+
+    def get_attribute_def(self, name: str) -> AttributeDefinition:
+        definition = self.resolve(self.attribute_definitions, name)
+        if not isinstance(definition, AttributeDefinition):
+            raise KeyError(f"Definition not found in namespace: Key:{name}")
+        return definition
+
+    def get_constraint_def(self, name: str) -> ConstraintDefinition:
+        definition = self.resolve(self.constraint_definitions, name)
+        if not isinstance(definition, ConstraintDefinition):
+            raise KeyError(f"Definition not found in namespace: Key:{name}")
+        return definition
+
+    # -- construction ------------------------------------------------------
+
+    def add_part_def(self, part_def: PartDefinition) -> PartDefinition:
+        key = self.stored_key(part_def)
+        if key in self.part_definitions:
+            raise ValueError(f"Duplicate part definition for {part_def.name}")
+        self.part_definitions[key] = part_def
+        return part_def
+
+    def add_port_def(self, port_def: PortDefinition) -> PortDefinition:
+        key = self.stored_key(port_def)
+        if key in self.port_definitions:
+            raise ValueError(f"Duplicate port definition for {port_def.name}")
+        self.port_definitions[key] = port_def
+        return port_def
+
+    def add_attribute_def(
+        self, attribute_def: AttributeDefinition
+    ) -> AttributeDefinition:
+        key = self.stored_key(attribute_def)
+        if key in self.attribute_definitions:
+            raise ValueError(
+                f"Duplicate attribute definition for {attribute_def.name}"
+            )
+        self.attribute_definitions[key] = attribute_def
+        return attribute_def
+
+    def add_requirement_def(
+        self, requirement_def: RequirementDefinition
+    ) -> RequirementDefinition:
+        key = self.stored_key(requirement_def)
+        if key in self.requirement_definitions:
+            raise ValueError(
+                f"Duplicate requirement definition for {requirement_def.name}"
+            )
+        self.requirement_definitions[key] = requirement_def
+        return requirement_def
+
+    def add_constraint_def(
+        self, constraint_def: ConstraintDefinition
+    ) -> ConstraintDefinition:
+        key = self.stored_key(constraint_def)
+        if key in self.constraint_definitions:
+            raise ValueError(
+                f"Duplicate constraint definition for {constraint_def.name}"
+            )
+        self.constraint_definitions[key] = constraint_def
+        return constraint_def
+
+    # -- usage resolution ----------------------------------------------------
+
+    def resolve_part(self, usage: PartUsage | str | None) -> PartDefinition | None:
+        """The part definition a part usage refers to, or None if unknown."""
+        if isinstance(usage, PartUsage):
+            usage = usage.type_name
+        if not usage:
+            return None
+        definition = self.resolve(self.part_definitions, usage)
+        return definition if isinstance(definition, PartDefinition) else None
+
+    def resolve_port(self, usage: PortUsage | str) -> PortDefinition | None:
+        """The port definition a port usage refers to, or None if unknown."""
+        name = usage.type_name if isinstance(usage, PortUsage) else usage
+        if not name:
+            return None
+        definition = self.resolve(self.port_definitions, name)
+        return definition if isinstance(definition, PortDefinition) else None
+
+    def resolve_attribute_def(
+        self, usage: Attribute | str | None
+    ) -> AttributeDefinition | None:
+        """The attribute def an attribute usage refers to, or None if unknown."""
+        if usage is None:
+            return None
+        name = usage.type_name if isinstance(usage, Attribute) else usage
+        if not name:
+            return None
+        definition = self.resolve(self.attribute_definitions, name)
+        return definition if isinstance(definition, AttributeDefinition) else None
+
+    def iter_part_usages(self, part_def: PartDefinition) -> Iterator[PartUsage]:
+        """The part usages *part_def* declares, without inherited ones.
+
+        The IR stays source-faithful; use :meth:`iter_effective_part_usages`
+        when the walk needs the whole member set.
+        """
+        return iter(part_def.parts.values())
+
+    def iter_effective_part_usages(
+        self, part_def: PartDefinition
+    ) -> Iterator[PartUsage]:
+        """Every part usage *part_def* exposes, inherited members included."""
+        from pycps_sysml.model.effective import effective_members
+
+        return iter(effective_members(self, part_def).parts.values())
+
+    # -- export --------------------------------------------------------------
+
+    def export_declared(self) -> dict[str, str]:
+        """Per-source-file SysML v2 text; see ``exporter.py`` for the format."""
+        from pycps_sysml.model.exporter import export_declared
+
+        return export_declared(self)

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions, effective_members, load
-from pycps_sysml2.metadata import fmu_metadata, read_experiment, ssp_metadata
+from pycps_sysml import core_definitions, effective_members, load
+from pycps_sysml.metadata import fmu_metadata, read_experiment, ssp_metadata
 
 MODEL = Path(__file__).with_name("model.sysml")
 

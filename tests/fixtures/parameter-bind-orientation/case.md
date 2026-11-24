@@ -35,7 +35,7 @@ port-to-port binds, and ignores binds that do not touch a parameter port.
 
 ## Provenance
 
-Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`), path
+Copied from `pyssporg/pyssp_sysml`, commit `5856b41` (tag `v0.3.0`), path
 `tests/fixtures/parameter-bind-orientation/template.sysml`. Duplicated rather
 than referenced because this library has no dependency on the SSP toolchain; the
 parameter dialect is still shared, so the same SysML document is evidence in

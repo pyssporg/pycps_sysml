@@ -1,7 +1,7 @@
 # Case: `packages`
 
 Input documents for `tests/test_package_namespace.py`. Every file is a complete
-SysML v2 package that a test loads through `pycps_sysml2.model.load`; nothing is
+SysML v2 package that a test loads through `pycps_sysml.model.load`; nothing is
 generated from them, so the tree holds inputs only.
 
 - **Conversion:** SysML v2 text → `Architecture`. A directory root loads its

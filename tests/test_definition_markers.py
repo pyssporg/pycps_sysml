@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import importlib
 
-from pycps_sysml2 import core_definitions, load
-from pycps_sysml2.metadata import (
+from pycps_sysml import core_definitions, load
+from pycps_sysml.metadata import (
     DEFAULT_EXPERIMENT_MARKER,
     EXPERIMENT_MARKER,
     FMU_METADATA_MARKER,
@@ -21,17 +21,17 @@ from pycps_sysml2.metadata import (
     SSP_METADATA_MARKER,
     is_default_experiment_definition,
 )
-from pycps_sysml2.metadata.helpers import specializes_marker_deep
-from pycps_sysml2.model import Architecture, Definition, effective_members
+from pycps_sysml.metadata.helpers import specializes_marker_deep
+from pycps_sysml.model import Architecture, Definition, effective_members
 from pyssp_sysml_definitions import interop_definitions
 
 #: Modules whose module-level constants are part of the vocabulary contract.
 _MODULE_NAMES = (
-    "pycps_sysml2.metadata.roles",
-    "pycps_sysml2.metadata.fmu_metadata",
-    "pycps_sysml2.metadata.sourced_metadata",
-    "pycps_sysml2.metadata.ssp_metadata",
-    "pycps_sysml2.parameters.dialect.markers",
+    "pycps_sysml.metadata.roles",
+    "pycps_sysml.metadata.fmu_metadata",
+    "pycps_sysml.metadata.sourced_metadata",
+    "pycps_sysml.metadata.ssp_metadata",
+    "pycps_sysml.parameters.dialect.markers",
 )
 
 #: Constant suffixes that name a term ``core.sysml`` must declare. A port name
@@ -117,7 +117,7 @@ def test_core_definitions_carry_every_vocabulary_constant() -> None:
 def test_core_definitions_state_the_reserved_parameter_port_name() -> None:
     """The reserved usage name is canonical in ``core.sysml``, not only code."""
 
-    markers = importlib.import_module("pycps_sysml2.parameters.dialect.markers")
+    markers = importlib.import_module("pycps_sysml.parameters.dialect.markers")
     text = core_definitions().read_text(encoding="utf-8")
 
     assert f"in port {markers.PARAMETERS_PORT_NAME}" in text
@@ -126,10 +126,10 @@ def test_core_definitions_state_the_reserved_parameter_port_name() -> None:
 def test_shipped_metadata_definitions_match_the_code_fields() -> None:
     architecture = load(core_definitions())
     fmu_fields = _constant(
-        "pycps_sysml2.metadata.fmu_metadata", "FMU_METADATA_FIELDS"
+        "pycps_sysml.metadata.fmu_metadata", "FMU_METADATA_FIELDS"
     )
     ssp_fields = _constant(
-        "pycps_sysml2.metadata.ssp_metadata", "SSP_METADATA_FIELDS"
+        "pycps_sysml.metadata.ssp_metadata", "SSP_METADATA_FIELDS"
     )
 
     _assert_attribute_members(
@@ -149,7 +149,7 @@ def test_shipped_metadata_definitions_match_the_code_fields() -> None:
 def test_shipped_experiment_definitions_match_the_code_fields() -> None:
     architecture = load(core_definitions())
     experiment_fields = _constant(
-        "pycps_sysml2.metadata.roles", "EXPERIMENT_FIELDS"
+        "pycps_sysml.metadata.roles", "EXPERIMENT_FIELDS"
     )
     experiment = architecture.get_attribute_def(EXPERIMENT_MARKER)
     default = architecture.get_attribute_def(DEFAULT_EXPERIMENT_MARKER)
@@ -191,7 +191,7 @@ def test_shipped_definitions_keep_their_supertype_chains() -> None:
 
 def test_shipped_parameter_markers_stay_empty() -> None:
     architecture = load(core_definitions())
-    markers = importlib.import_module("pycps_sysml2.parameters.dialect.markers")
+    markers = importlib.import_module("pycps_sysml.parameters.dialect.markers")
 
     _assert_no_members(
         architecture,
@@ -211,7 +211,7 @@ def test_the_export_import_covers_exactly_the_shipped_definitions() -> None:
     silently export an unresolvable reference.
     """
 
-    from pycps_sysml2.model.exporter import SHIPPED_DEFINITIONS
+    from pycps_sysml.model.exporter import SHIPPED_DEFINITIONS
 
     architecture = load(core_definitions())
     declared = (

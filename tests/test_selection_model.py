@@ -12,21 +12,21 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2.metadata import SSP_ROLES
-from pycps_sysml2.model import Architecture, load
-from pycps_sysml2.parameters.configuration import (
+from pycps_sysml.metadata import SSP_ROLES
+from pycps_sysml.model import Architecture, load
+from pycps_sysml.parameters.configuration import (
     configuration_name,
     derived_selection,
     model_root,
 )
-from pycps_sysml2.parameters.selection import (
+from pycps_sysml.parameters.selection import (
     AnalysisPlan,
     analysis_plans,
     analysis_selection,
     analysis_selections,
     parse_selection,
 )
-from pycps_sysml2.parameters.variation import resolve_selected
+from pycps_sysml.parameters.variation import resolve_selected
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

@@ -11,18 +11,18 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import (
+from pycps_sysml import (
     ValidationIssue,
     ValidationReport,
     core_definitions,
     validate,
 )
-from pycps_sysml2.metadata import (
+from pycps_sysml.metadata import (
     is_fmu_model,
     require_fmu_metadata,
     validate_fmu_metadata_marker,
 )
-from pycps_sysml2.model import Architecture, load
+from pycps_sysml.model import Architecture, load
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

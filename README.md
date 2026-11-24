@@ -1,15 +1,15 @@
-# pycps_sysml2
+# pycps_sysml
 
 The SysML dialect layer for our CPS artifacts: it parses SysML v2 into a
 repo-owned IR and owns variation, selection, constraints, and every marker and
 metadata accessor for the SSP and the FMI dialects.
 
 **Boundary.** This library reads and interprets SysML. It emits no artifact: no
-SSD, SSV, SSM, SSP, modelDescription, C header, or FMU. `pyssp_sysml2` (SSP
+SSD, SSV, SSM, SSP, modelDescription, C header, or FMU. `pyssp_sysml` (SSP
 artifacts) and `pyfmi_interfaces` (FMI artifacts) are implementers: both import
-`pycps_sysml2` for every SysML read and keep no parser, marker set, or IR of
+`pycps_sysml` for every SysML read and keep no parser, marker set, or IR of
 their own. The shared vocabulary ships in `pyssp-sysml-definitions`;
-`pycps_sysml2` re-exports `core_definitions` and keeps the parser, IR, and
+`pycps_sysml` re-exports `core_definitions` and keeps the parser, IR, and
 policies. A consumer that needs SysML knowledge installs this package; a
 consumer that needs an artifact installs an implementer.
 
@@ -39,13 +39,13 @@ Requires Python 3.11 or newer; CI runs 3.11 and 3.12.
 ## No CLI
 
 0.4.0 ships no console script. There is no entry point, no
-`python -m pycps_sysml2`, and nothing installed on `PATH`: the Python API is the
+`python -m pycps_sysml`, and nothing installed on `PATH`: the Python API is the
 surface.
 
 ## Python API
 
 The dialect definitions ship in `pyssp-sysml-definitions` (`package
-PysspCore`); `pycps_sysml2` re-exports `core_definitions` for the historical
+PysspCore`); `pycps_sysml` re-exports `core_definitions` for the historical
 import path. A model imports them with `private import PysspCore::*;`, and
 `load` receives that library as an include root. Save this as `plant.sysml`:
 
@@ -62,7 +62,7 @@ package Plant {
 Load it with the definitions as an include root and read the composition:
 
 ```python
-from pycps_sysml2 import core_definitions, load
+from pycps_sysml import core_definitions, load
 
 architecture = load("plant.sysml", core_definitions())
 composition = architecture.get_part_def("PlantComposition")

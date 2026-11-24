@@ -13,20 +13,20 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.metadata.roles import RolePolicy
-from pycps_sysml2.model import Architecture, load
-from pycps_sysml2.parameters.dialect.composition import (
+from pycps_sysml import core_definitions
+from pycps_sysml.metadata.roles import RolePolicy
+from pycps_sysml.model import Architecture, load
+from pycps_sysml.parameters.dialect.composition import (
     applied_sets,
     validate_parameter_dialect,
 )
-from pycps_sysml2.parameters.policy import SSP_POLICY, DialectPolicy
+from pycps_sysml.parameters.policy import SSP_POLICY, DialectPolicy
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 
 
 PROJECT = Path(__file__).resolve().parents[1]
-SRC = PROJECT / "src" / "pycps_sysml2"
+SRC = PROJECT / "src" / "pycps_sysml"
 PARAMETERS = SRC / "parameters"
 
 NESTED_BIND_MODEL = """package Binds {
@@ -189,7 +189,7 @@ def test_the_parameter_package_does_not_reach_for_role_vocabulary() -> None:
             continue
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         imported = _imported_names(tree)
-        for name in sorted(imported & (role_markers | {"pycps_sysml2.metadata.roles"})):
+        for name in sorted(imported & (role_markers | {"pycps_sysml.metadata.roles"})):
             offenders.append(f"{path.relative_to(PROJECT)} imports {name}")
         for name in sorted(_called_names(tree) & role_calls):
             offenders.append(f"{path.relative_to(PROJECT)} calls {name}")

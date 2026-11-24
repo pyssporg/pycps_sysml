@@ -2,7 +2,7 @@
 
 Three gates, all ``static``:
 
-- ``src/`` never imports ``pyssp_standard`` or ``pyssp_sysml2``; the point of
+- ``src/`` never imports ``pyssp_standard`` or ``pyssp_sysml``; the point of
   this repository is that the dialect layer stands on its own, and an import of
   either upstream package would silently reintroduce the coupling;
 - ``pyproject.toml`` reads the version from the package, never from a copy;
@@ -21,10 +21,10 @@ from conftest import COLLECTED_LEVELS, FILE_LEVELS, MIXED_FILES, MIXED_LEVELS
 
 PROJECT = Path(__file__).resolve().parents[1]
 SRC = PROJECT / "src"
-PACKAGE = SRC / "pycps_sysml2"
+PACKAGE = SRC / "pycps_sysml"
 
 #: Upstream packages this library must not depend on, at any depth.
-FORBIDDEN_IMPORT_ROOTS = ("pyssp_standard", "pyssp_sysml2")
+FORBIDDEN_IMPORT_ROOTS = ("pyssp_standard", "pyssp_sysml")
 
 
 def _imported_modules(path: Path) -> list[tuple[str, int]]:
@@ -55,14 +55,14 @@ def test_src_does_not_import_an_upstream_package() -> None:
                     f"{path.relative_to(PROJECT)}:{line} imports {module}"
                 )
     assert not violations, (
-        "src/ must not import pyssp_standard or pyssp_sysml2:\n"
+        "src/ must not import pyssp_standard or pyssp_sysml:\n"
         + "\n".join(violations)
     )
 
 
 def test_the_version_has_one_source_of_truth() -> None:
     """``pyproject.toml`` reads the version from the package, not a copy."""
-    import pycps_sysml2
+    import pycps_sysml
 
     tomllib = pytest.importorskip("tomllib", reason="tomllib is Python 3.11+")
     project = tomllib.loads((PROJECT / "pyproject.toml").read_text(encoding="utf-8"))
@@ -70,9 +70,9 @@ def test_the_version_has_one_source_of_truth() -> None:
     assert "version" not in project["project"]
     assert project["project"]["dynamic"] == ["version"]
     assert project["tool"]["setuptools"]["dynamic"]["version"] == {
-        "attr": "pycps_sysml2.__version__"
+        "attr": "pycps_sysml.__version__"
     }
-    assert re.fullmatch(r"\d+\.\d+\.\d+", pycps_sysml2.__version__)
+    assert re.fullmatch(r"\d+\.\d+\.\d+", pycps_sysml.__version__)
 
     # And the attribute is assigned in exactly one module.
     assignments: list[str] = []
@@ -91,7 +91,7 @@ def test_the_version_has_one_source_of_truth() -> None:
                 assignments.append(str(path.relative_to(PROJECT)))
     expected = [str((PACKAGE / "__init__.py").relative_to(PROJECT))]
     assert assignments == expected, (
-        "__version__ must be assigned once, in pycps_sysml2/__init__.py: "
+        "__version__ must be assigned once, in pycps_sysml/__init__.py: "
         f"{assignments}"
     )
 

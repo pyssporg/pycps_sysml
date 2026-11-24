@@ -35,7 +35,7 @@ splitting it on the dot.
 `feed.X[1]` and `feed.X[2]`, not `feed.'X[1]'`.
 
 - **Conversion:** SysML v2 text → `Architecture` through
-  `pycps_sysml2.model.load`, back to text through
+  `pycps_sysml.model.load`, back to text through
   `Architecture.export_declared`, and to SSD through `generate_ssd`.
 - **Requirement / fault:** a quoted name must reach the artifact with its
   characters intact; a generator must never emit the quotes into an SSD name.
@@ -67,7 +67,7 @@ exporter must preserve.
 
 ## Provenance
 
-Duplicated from `pyssp_sysml2` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml2`,
+Duplicated from `pyssp_sysml` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml`,
 commit `5856b41`, v0.3.0) when the loader and model were extracted. Quoted-name
-handling lives in `pycps_sysml2.model.names`; the documents are the contract for
+handling lives in `pycps_sysml.model.names`; the documents are the contract for
 it, so they travel with the code instead of staying in an unreferenced test tree.

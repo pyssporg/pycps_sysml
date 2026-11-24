@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.metadata.fmu_metadata import (
+from pycps_sysml import core_definitions
+from pycps_sysml.metadata.fmu_metadata import (
     FmuMetadata,
     component_implementation,
     component_source,
@@ -20,14 +20,14 @@ from pycps_sysml2.metadata.fmu_metadata import (
     is_fmu_metadata_definition,
     require_fmu_metadata,
 )
-from pycps_sysml2.metadata.ssp_metadata import (
+from pycps_sysml.metadata.ssp_metadata import (
     SSP_METADATA_MARKER,
     is_ssp_metadata_definition,
     ssp_metadata,
 )
-from pycps_sysml2.metadata.roles import is_ssp_model
-from pycps_sysml2.model import Architecture, AttributeDefinition, PartDefinition, load
-from pycps_sysml2.parameters.dialect.markers import is_parameter_set
+from pycps_sysml.metadata.roles import is_ssp_model
+from pycps_sysml.model import Architecture, AttributeDefinition, PartDefinition, load
+from pycps_sysml.parameters.dialect.markers import is_parameter_set
 from tests.fixture_files import render_fixture
 from tests.testhelpers import COMPOSITION_NAME, write_model
 

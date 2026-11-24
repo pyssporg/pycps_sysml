@@ -38,7 +38,7 @@ reads as SysML; the accessor is the oracle.
 
 ## Provenance
 
-Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`), path
+Copied from `pyssporg/pyssp_sysml`, commit `5856b41` (tag `v0.3.0`), path
 `tests/fixtures/fmu-metadata/template.sysml`. Duplicated rather than referenced
 because this library must stand alone: it has no dependency on the SSP
 toolchain, and its accessor tests need the same document as evidence. Only the

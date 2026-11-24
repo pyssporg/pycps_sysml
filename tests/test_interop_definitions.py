@@ -15,30 +15,30 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions, load
-from pycps_sysml2.metadata import (
+from pycps_sysml import core_definitions, load
+from pycps_sysml.metadata import (
     SOURCED_METADATA_MARKER,
     fmu_metadata,
     is_sourced_metadata_definition,
     is_ssp_metadata_definition,
     ssp_metadata,
 )
-from pycps_sysml2.metadata.fmu_metadata import is_fmu_metadata_definition
-from pycps_sysml2.metadata.helpers import specializes_marker_deep
-from pycps_sysml2.parameters.dialect.composition import (
+from pycps_sysml.metadata.fmu_metadata import is_fmu_metadata_definition
+from pycps_sysml.metadata.helpers import specializes_marker_deep
+from pycps_sysml.parameters.dialect.composition import (
     AttributeKind,
     classify_attribute,
     validate_parameter_dialect,
 )
-from pycps_sysml2.parameters.dialect.declarations import (
+from pycps_sysml.parameters.dialect.declarations import (
     parameter_interface,
     validate_parameter_port_names,
 )
-from pycps_sysml2.parameters.dialect.markers import (
+from pycps_sysml.parameters.dialect.markers import (
     PARAMETERS_PORT_NAME,
     is_parameter_interface,
 )
-from pycps_sysml2.parameters.policy import SSP_POLICY
+from pycps_sysml.parameters.policy import SSP_POLICY
 from pyssp_sysml_definitions import include_roots, interop_definitions
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model

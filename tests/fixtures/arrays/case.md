@@ -57,7 +57,7 @@ to read the multiplicity as authored.
 
 ## Provenance
 
-Duplicated from `pyssp_sysml2` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml2`,
+Duplicated from `pyssp_sysml` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml`,
 commit `5856b41`, v0.3.0) when the loader and model were extracted. Only
 `ports.sysml` is used here (loader multiplicity and export round trip);
 `mismatch.sysml` is kept with the case as authored because the two documents are

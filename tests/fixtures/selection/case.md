@@ -88,7 +88,7 @@ and every reachable point must be selected.
 
 ## Provenance
 
-Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`),
+Copied from `pyssporg/pyssp_sysml`, commit `5856b41` (tag `v0.3.0`),
 path `tests/fixtures/selection/`. Duplicated rather than referenced because
 this library has no dependency on the SSP toolchain; the model-level
 behaviour is still shared, so the same SysML documents are evidence in both

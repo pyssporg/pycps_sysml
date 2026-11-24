@@ -11,17 +11,17 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.model import Architecture, load
-from pycps_sysml2.parameters.dialect.composition import validate_parameter_dialect
-from pycps_sysml2.parameters.dialect.declarations import (
+from pycps_sysml import core_definitions
+from pycps_sysml.model import Architecture, load
+from pycps_sysml.parameters.dialect.composition import validate_parameter_dialect
+from pycps_sysml.parameters.dialect.declarations import (
     parameter_declarations,
     parameter_interface,
     parameter_items,
     validate_parameter_port_names,
 )
-from pycps_sysml2.parameters.dialect.markers import validate_marker_definitions
-from pycps_sysml2.parameters.policy import SSP_POLICY
+from pycps_sysml.parameters.dialect.markers import validate_marker_definitions
+from pycps_sysml.parameters.policy import SSP_POLICY
 from tests.fixture_files import render_fixture
 from tests.testhelpers import COMPOSITION_NAME, write_model
 

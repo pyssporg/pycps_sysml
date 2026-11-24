@@ -1,0 +1,441 @@
+"""Conformant SysML v2 text export for the repo-owned architecture model.
+
+The exporter emits text directly from the dataclasses in ``model.py`` (no
+parser involvement), so the output format is a repo contract that cannot drift
+with sysmlpy releases. Correctness of the emitted syntax is pinned by
+round-trip tests that re-load exported text through the sysmlpy-backed loader.
+
+Format (2-space indent, one blank line between definitions, trailing newline):
+
+.. code-block:: text
+
+    package Example {
+      port def Parameters :> ParameterInterface {
+        attribute gain : Real[3];
+      }
+
+      port def Signal {
+        doc /* Air vehicle orientation. */
+        attribute x : Real;
+      }
+
+      part def SystemComposition {
+        part src : Source;
+        attribute nominal : NominalSet;
+        connect src.outSig to dst.inSig;
+        bind src.parameters.gain = nominal.gain;
+      }
+    }
+
+Grouping follows the retired ``export_declared`` semantics: definitions are
+grouped by ``source_file`` (default ``architecture.sysml``), file names are
+sorted, and within a file requirements, ports, attribute defs, and parts each
+appear sorted by name. Attributes, port usages, and part usages are sorted by
+name inside their definition; connections and bindings keep insertion order.
+A definition of a package other than the architecture's own is omitted, so an
+included root never appears in the model's declaration text.
+
+When an emitted definition refers to one of the shipped ``PysspCore`` names
+(its supertype, a member type, or a usage type), the file declares
+``private import PysspCore::*;``. A package that refers to none of them stays
+import-free. The exporter never writes a synthesized copy of a shipped role
+marker: synthesis exists in memory for classification, and the vocabulary
+itself ships as an include root.
+"""
+
+from __future__ import annotations
+
+from pycps_sysml.model.model import (
+    Architecture,
+    Attribute,
+    AttributeDefinition,
+    ConstraintDefinition,
+    Definition,
+    PartDefinition,
+    PortDefinition,
+    PortUsage,
+    RequirementDefinition,
+)
+from pycps_sysml.model.names import quote_name
+
+DEFAULT_SOURCE_FILE = "architecture.sysml"
+
+#: The package the shared vocabulary ships in.
+CORE_PACKAGE = "PysspCore"
+
+#: Definitions the shipped ``PysspCore`` vocabulary declares. A model that
+#: refers to one of these names needs the wildcard import; a synthesized copy
+#: is never part of the declaration text.
+SHIPPED_DEFINITIONS = frozenset(
+    {
+        "FmuMetadata",
+        "SspMetadata",
+        "SourcedMetadata",
+        "FmuModel",
+        "SspModel",
+        "Analysis",
+        "ParameterInterface",
+        "ParameterSet",
+        "DefaultExperiment",
+        "Experiment",
+    }
+)
+
+_DEFINITION_INDENT = "  "
+_MEMBER_INDENT = "    "
+
+
+def _format_value(value) -> str:
+    """Render a Python literal as a SysML v2 literal expression."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str):
+        return _quote(value)
+    if isinstance(value, tuple):
+        return "(" + ", ".join(_format_value(item) for item in value) + ")"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    return _quote(str(value))
+
+
+def _quote(text: str) -> str:
+    escaped = (
+        text.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t")
+    )
+    return '"' + escaped + '"'
+
+
+def _doc_line(doc: str | None, indent: str = _MEMBER_INDENT) -> list[str]:
+    if not doc:
+        return []
+    return [f"{indent}doc /* {doc} */"]
+
+
+def _multiplicity_suffix(attribute: Attribute) -> str:
+    return f"[{attribute.multiplicity}]" if attribute.multiplicity else ""
+
+
+def _feature_value_text(value) -> str:
+    """Feature-value text: a string is already an expression as written."""
+    return value if isinstance(value, str) else _format_value(value)
+
+
+def _endpoint(part: str | None, port: str) -> str:
+    """Emit one connection endpoint with each name token quoted as needed."""
+    port_text = quote_name(port)
+    return port_text if part is None else f"{quote_name(part)}.{port_text}"
+
+
+def _qualified_name(text: str) -> str:
+    """Emit a possibly qualified name, quoting each ``::`` segment as needed."""
+    return "::".join(quote_name(segment) for segment in text.split("::"))
+
+
+def _refers_to_shipped_name(definition: Definition) -> bool:
+    """Whether ``definition`` names a shipped definition in emitted text.
+
+    Only references count, not the definition's own name: a user-authored
+    declaration of a shipped name resolves locally and needs no import.
+    """
+    referenced = list(getattr(definition, "specializes", ()))
+    referenced.extend(
+        attribute.type_name
+        for attribute in getattr(definition, "attributes", {}).values()
+        if attribute.type_name
+    )
+    referenced.extend(
+        port.type_name for port in getattr(definition, "ports", {}).values()
+    )
+    referenced.extend(
+        part.type_name
+        for part in getattr(definition, "parts", {}).values()
+        if part.type_name
+    )
+    referenced.extend(
+        parameter.type_name
+        for parameter in getattr(definition, "parameters", {}).values()
+        if parameter.type_name
+    )
+    return any(
+        name.rsplit("::", 1)[-1] in SHIPPED_DEFINITIONS for name in referenced
+    )
+
+
+def _attribute_lines(attribute: Attribute, indent: str = _MEMBER_INDENT) -> list[str]:
+    lines = _doc_line(attribute.doc, indent)
+    type_name = attribute.effective_type_name
+    multiplicity = _multiplicity_suffix(attribute)
+    direction = f"{attribute.direction} " if attribute.direction else ""
+    if attribute.redefines:
+        # A redefinition keeps the inherited feature name (``:>> scenario``) and
+        # its value is a feature-value expression, not necessarily a literal.
+        targets = ", ".join(_qualified_name(target) for target in attribute.redefines)
+        declaration = f"{indent}attribute :>> {targets}"
+        if attribute.type_name:
+            declaration += f" : {attribute.type_name}"
+        if attribute.value is not None:
+            declaration += f" = {_feature_value_text(attribute.value)}"
+        lines.append(declaration + ";")
+    elif attribute.value is not None:
+        value = _format_value(attribute.value)
+        lines.append(
+            f"{indent}{direction}attribute {quote_name(attribute.name)}"
+            f" : {type_name}{multiplicity} = {value};"
+        )
+    elif type_name:
+        lines.append(
+            f"{indent}{direction}attribute {quote_name(attribute.name)}"
+            f" : {type_name}{multiplicity};"
+        )
+    else:
+        lines.append(
+            f"{indent}{direction}attribute {quote_name(attribute.name)}{multiplicity};"
+        )
+    return lines
+
+
+def _port_usage_lines(port: PortUsage, indent: str = _MEMBER_INDENT) -> list[str]:
+    direction = f"{port.direction} " if port.direction else ""
+    multiplicity = f"[{port.multiplicity}]" if port.multiplicity else ""
+    type_name = _qualified_name(port.type_name)
+    if port.conjugated:
+        type_name = f"~{type_name}"
+    return _doc_line(port.doc, indent) + [
+        f"{indent}{direction}port {quote_name(port.name)}"
+        f" : {type_name}{multiplicity};"
+    ]
+
+
+def _part_usage_text(part) -> str:
+    """One part usage declaration, including its specialization and value."""
+    if part.redefines:
+        targets = ", ".join(_qualified_name(target) for target in part.redefines)
+        text = f"part :>> {targets}"
+    else:
+        text = f"part {quote_name(part.name)}"
+    if part.type_name:
+        text += f" : {part.type_name}"
+    if part.subsets:
+        text += f" :> {', '.join(_qualified_name(target) for target in part.subsets)}"
+    if part.value is not None:
+        text += f" = {part.value}"
+    return text + ";"
+
+
+def _part_definition_lines(part_def: PartDefinition) -> list[str]:
+    suffix = ""
+    if part_def.specializes:
+        suffix = f" :> {', '.join(_qualified_name(target) for target in part_def.specializes)}"
+    if not any(
+        (
+            part_def.doc,
+            part_def.attributes,
+            part_def.ports,
+            part_def.parts,
+            part_def.connections,
+            part_def.bindings,
+            part_def.constraints,
+        )
+    ):
+        return [
+            f"{_DEFINITION_INDENT}part def {quote_name(part_def.name)}{suffix};"
+        ]
+    lines = [f"{_DEFINITION_INDENT}part def {quote_name(part_def.name)}{suffix} {{"]
+    if part_def.doc:
+        lines.extend(_doc_line(part_def.doc, _MEMBER_INDENT))
+
+    def member_lines():
+        for attribute in sorted(part_def.attributes.values(), key=lambda a: a.name):
+            yield from _attribute_lines(attribute)
+        for port in sorted(part_def.ports.values(), key=lambda p: p.name):
+            yield from _port_usage_lines(port)
+        for part in sorted(part_def.parts.values(), key=lambda p: p.name):
+            yield from _doc_line(part.doc)
+            yield f"{_MEMBER_INDENT}{_part_usage_text(part)}"
+        for connection in part_def.connections.values():  # insertion order
+            yield from _doc_line(connection.doc)
+            yield (
+                f"{_MEMBER_INDENT}connect"
+                f" {_endpoint(connection.source_part, connection.source_port)}"
+                f" to {_endpoint(connection.destination_part, connection.destination_port)};"
+            )
+        for binding in part_def.bindings:  # insertion order
+            source = ".".join(quote_name(name) for name in binding.source)
+            target = ".".join(quote_name(name) for name in binding.target)
+            yield f"{_MEMBER_INDENT}bind {source} = {target};"
+        for constraint in part_def.constraints:  # insertion order
+            yield from _constraint_usage_lines(constraint)
+
+    lines.extend(member_lines())
+    lines.append(f"{_DEFINITION_INDENT}}}")
+    return lines
+
+
+def _port_definition_lines(port_def: PortDefinition) -> list[str]:
+    suffix = ""
+    if port_def.specializes:
+        suffix = f" :> {', '.join(_qualified_name(target) for target in port_def.specializes)}"
+    if not port_def.doc and not port_def.attributes:
+        return [f"{_DEFINITION_INDENT}port def {quote_name(port_def.name)}{suffix};"]
+
+    lines = [f"{_DEFINITION_INDENT}port def {quote_name(port_def.name)}{suffix} {{"]
+    if port_def.doc:
+        lines.extend(_doc_line(port_def.doc, _MEMBER_INDENT))
+    for attribute in sorted(port_def.attributes.values(), key=lambda a: a.name):
+        lines.extend(_attribute_lines(attribute))
+    lines.append(f"{_DEFINITION_INDENT}}}")
+    return lines
+
+
+def _attribute_definition_lines(attribute_def: AttributeDefinition) -> list[str]:
+    suffix = ""
+    if attribute_def.specializes:
+        suffix = f" :> {', '.join(_qualified_name(target) for target in attribute_def.specializes)}"
+    if not attribute_def.doc and not attribute_def.attributes:
+        return [
+            f"{_DEFINITION_INDENT}attribute def {quote_name(attribute_def.name)}{suffix};"
+        ]
+
+    lines = [
+        f"{_DEFINITION_INDENT}attribute def {quote_name(attribute_def.name)}{suffix} {{"
+    ]
+    if attribute_def.doc:
+        lines.extend(_doc_line(attribute_def.doc, _MEMBER_INDENT))
+    for attribute in sorted(attribute_def.attributes.values(), key=lambda a: a.name):
+        lines.extend(_attribute_lines(attribute))
+    lines.append(f"{_DEFINITION_INDENT}}}")
+    return lines
+
+
+def _requirement_definition_lines(
+    requirement_def: RequirementDefinition,
+) -> list[str]:
+    lines = [f"{_DEFINITION_INDENT}requirement def {quote_name(requirement_def.name)} {{"]
+    if requirement_def.text:
+        lines.extend(_doc_line(requirement_def.text, _MEMBER_INDENT))
+    lines.append(f"{_DEFINITION_INDENT}}}")
+    return lines
+
+
+def _constraint_definition_lines(
+    constraint_def: ConstraintDefinition,
+) -> list[str]:
+    lines = [f"{_DEFINITION_INDENT}constraint def {quote_name(constraint_def.name)} {{"]
+    if constraint_def.doc:
+        lines.extend(_doc_line(constraint_def.doc, _MEMBER_INDENT))
+    for parameter in constraint_def.parameters.values():
+        if parameter.value is not None:
+            lines.append(
+                f"{_MEMBER_INDENT}in {quote_name(parameter.name)} = {parameter.value};"
+            )
+        elif parameter.type_name:
+            lines.append(
+                f"{_MEMBER_INDENT}in {quote_name(parameter.name)} : {parameter.type_name};"
+            )
+        else:
+            lines.append(f"{_MEMBER_INDENT}in {quote_name(parameter.name)};")
+    if constraint_def.expression:
+        lines.append(f"{_MEMBER_INDENT}{constraint_def.expression}")
+    lines.append(f"{_DEFINITION_INDENT}}}")
+    return lines
+
+
+def _constraint_usage_lines(constraint) -> list[str]:
+    """Usage declaration plus its ``assert`` statement when asserted."""
+    lines: list[str] = []
+    if constraint.name and constraint.type_name:
+        lines.append(
+            f"{_MEMBER_INDENT}constraint {quote_name(constraint.name)}"
+            f" : {constraint.type_name} {{"
+        )
+        for parameter, reference in constraint.bindings.items():
+            lines.append(
+                f"{_MEMBER_INDENT}  in {quote_name(parameter)} = {reference};"
+            )
+        if constraint.expression:
+            lines.append(f"{_MEMBER_INDENT}  {constraint.expression}")
+        lines.append(f"{_MEMBER_INDENT}}}")
+    elif constraint.name and constraint.expression:
+        lines.append(f"{_MEMBER_INDENT}constraint {quote_name(constraint.name)} {{")
+        lines.append(f"{_MEMBER_INDENT}  {constraint.expression}")
+        lines.append(f"{_MEMBER_INDENT}}}")
+    if constraint.asserted and constraint.name:
+        negation = "not " if constraint.negated else ""
+        lines.append(f"{_MEMBER_INDENT}assert {negation}{quote_name(constraint.name)};")
+    return lines
+
+
+def _definition_lines(definition: Definition) -> list[str]:
+    if isinstance(definition, PartDefinition):
+        return _part_definition_lines(definition)
+    if isinstance(definition, PortDefinition):
+        return _port_definition_lines(definition)
+    if isinstance(definition, AttributeDefinition):
+        return _attribute_definition_lines(definition)
+    if isinstance(definition, RequirementDefinition):
+        return _requirement_definition_lines(definition)
+    if isinstance(definition, ConstraintDefinition):
+        return _constraint_definition_lines(definition)
+    raise TypeError(f"Unsupported definition type for export: {type(definition)!r}")
+
+
+def export_declared(architecture: Architecture) -> dict[str, str]:
+    """Emit one SysML v2 text per source file, keyed by bare file name.
+
+    Only definitions of the architecture's own package are emitted: an included
+    root supplies definitions from its own package, and those are not part of
+    the model's declaration text. A single-package model therefore yields the
+    same text as before, one ``package`` block per file.
+
+    A file whose definitions refer to a shipped ``PysspCore`` name declares the
+    wildcard import. A synthesized copy of a shipped definition is left out;
+    the import and the include root supply the real one.
+    """
+    # Grouped by (package, source file) so the emitted blocks are ordered by
+    # package name first, then by source file. Only the architecture's own
+    # package survives the filter, so a file name still maps to one block.
+    groups: dict[tuple[str, str], list[Definition]] = {}
+
+    def collect(definitions) -> None:
+        for definition in sorted(definitions, key=lambda d: d.name):
+            package = definition.package or architecture.package_name
+            if package != architecture.package_name:
+                continue
+            # In-memory synthesis keeps a definition usable for classification,
+            # but the shipped vocabulary is the only declaration of that name.
+            # ``package is None`` is the model's provenance mark for synthesized.
+            if (
+                definition.package is None
+                and definition.name in SHIPPED_DEFINITIONS
+            ):
+                continue
+            file_name = definition.source_file or DEFAULT_SOURCE_FILE
+            groups.setdefault((package, file_name), []).append(definition)
+
+    # Collect in requirements → ports → attribute defs → parts order so each
+    # file's layout follows the retired exporter's layout extended with value
+    # types (interfaces and parameter sets appear before their consumers).
+    collect(architecture.requirement_definitions.values())
+    collect(architecture.port_definitions.values())
+    collect(architecture.attribute_definitions.values())
+    collect(architecture.constraint_definitions.values())
+    collect(architecture.part_definitions.values())
+
+    files: dict[str, str] = {}
+    for package, file_name in sorted(groups):
+        definitions = groups[(package, file_name)]
+        lines = [f"package {quote_name(package)} {{"]
+        if any(_refers_to_shipped_name(definition) for definition in definitions):
+            lines.append(f"{_DEFINITION_INDENT}private import {CORE_PACKAGE}::*;")
+            lines.append("")
+        for index, definition in enumerate(definitions):
+            if index:
+                lines.append("")
+            lines.extend(_definition_lines(definition))
+        lines.append("}")
+        files[file_name] = "\n".join(lines) + "\n"
+    return files

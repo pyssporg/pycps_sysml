@@ -11,12 +11,12 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import load
-from pycps_sysml2.metadata import SSP_ROLES
-from pycps_sysml2.metadata.roles import is_ssp_model
-from pycps_sysml2.model import Architecture, PartDefinition, PartUsage
-from pycps_sysml2.parameters import component_definitions, component_refs
-from pycps_sysml2.parameters.configuration import derived_selection, qualified_type
+from pycps_sysml import load
+from pycps_sysml.metadata import SSP_ROLES
+from pycps_sysml.metadata.roles import is_ssp_model
+from pycps_sysml.model import Architecture, PartDefinition, PartUsage
+from pycps_sysml.parameters import component_definitions, component_refs
+from pycps_sysml.parameters.configuration import derived_selection, qualified_type
 from tests.fixture_files import fixture_path
 
 

@@ -2,7 +2,7 @@
 
 Input documents for `tests/test_sysml_model.py`. Every file is a complete SysML
 v2 package that a test writes with `write_model` and loads through
-`pycps_sysml2.model.load`; nothing here is an expected artifact.
+`pycps_sysml.model.load`; nothing here is an expected artifact.
 
 - **Conversion:** SysML v2 text → `Architecture`, and `Architecture` →
   SysML text through `export_declared()`, which the round-trip case reloads.
@@ -90,7 +90,7 @@ syntax error needs its own bytes and cannot share a file with a passing case.
 
 ## Provenance
 
-Duplicated from `pyssp_sysml2` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml2`,
+Duplicated from `pyssp_sysml` (`3rd_party/pyssp_workflow/3rd_party/pyssp_sysml`,
 commit `5856b41`, v0.3.0) when the loader and model were extracted. These are
 dialect-neutral loader inputs — they exercise parsing, the repo-owned model, and
 the exporter — so they are copied rather than imported from a test tree this

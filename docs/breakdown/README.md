@@ -1,4 +1,4 @@
-# Product Breakdown — pycps_sysml2
+# Product Breakdown — pycps_sysml
 
 Current-state record: why the dialect layer exists, what it promises, how it is
 organized, and how it is verified and released.

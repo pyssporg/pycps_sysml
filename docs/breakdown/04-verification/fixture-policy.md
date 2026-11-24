@@ -16,7 +16,7 @@ status: current
 lives here; it lives with the library that emits the artifact.
 
 **Recorded duplication.** `variation/`, `selection/`, `quoted-names/`, and some
-`parameter-*` documents exist in a second, edited copy in `pyssp_sysml2`, which
+`parameter-*` documents exist in a second, edited copy in `pyssp_sysml`, which
 needs its own variants to drive SSD output. The duplication is deliberate and
 bounded: the two repositories release independently, a shared fixture package
 would couple their release trains, and a test that reads across repositories

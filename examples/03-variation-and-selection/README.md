@@ -8,7 +8,7 @@ From the workspace root (`pyssp_dev/`), with the workspace venv active (see
 [`examples/README.md`](../README.md#setup)):
 
 ```bash
-python repos/pycps_sysml2/examples/03-variation-and-selection/run.py
+python repos/pycps_sysml/examples/03-variation-and-selection/run.py
 ```
 
 ## Expected output

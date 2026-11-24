@@ -73,7 +73,7 @@ undefined supertype or definition-kind mismatch, because the pinned analyzer
 emits no code. `require_fmu_metadata` returns problems instead of raising.
 
 **Core vocabulary.** The markers and schemas ship in
-`pyssp-sysml-definitions` as `core.sysml`; `pycps_sysml2` re-exports
+`pyssp-sysml-definitions` as `core.sysml`; `pycps_sysml` re-exports
 `core_definitions` from its `definitions/` facade. `load(model,
 core_definitions())` supplies the definitions, `private import PysspCore::*;`
 supplies visibility, and Core definitions (INFO-012) holds the canonical

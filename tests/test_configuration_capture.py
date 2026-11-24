@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2.model import load
-from pycps_sysml2.model.variation import variation_facts
-from pycps_sysml2.parameters.variation import refuse_variation_erasure
+from pycps_sysml.model import load
+from pycps_sysml.model.variation import variation_facts
+from pycps_sysml.parameters.variation import refuse_variation_erasure
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

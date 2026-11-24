@@ -9,14 +9,14 @@ status: current
 
 # Release
 
-**One version source.** `src/pycps_sysml2/__init__.py` holds `__version__`.
+**One version source.** `src/pycps_sysml/__init__.py` holds `__version__`.
 `pyproject.toml` declares `dynamic = ["version"]` and maps
-`version = { attr = "pycps_sysml2.__version__" }`; there is no
+`version = { attr = "pycps_sysml.__version__" }`; there is no
 `[project].version`, so a release edits the package attribute only.
 
 **Sequence.**
 
-1. Set `__version__ = "<version>"` in `src/pycps_sysml2/__init__.py` and regenerate
+1. Set `__version__ = "<version>"` in `src/pycps_sysml/__init__.py` and regenerate
    the registers if the version appears in prose.
 2. Run the gate: `ruff check src tests examples`, `python -m pytest -m "not slow"`,
    `python -m build --wheel --sdist`.
@@ -26,8 +26,8 @@ status: current
 **What the tag starts.** `.github/workflows/wheels.yml` builds
 `python -m build --wheel --sdist` and guards, in order: exactly one wheel in
 `dist/`; version not `0.0.0`; a fresh venv can install the wheel and import
-`pycps_sysml2` and `sysmlpy`; and, on a tag, `${GITHUB_REF_NAME#v}` equals
-`pycps_sysml2.__version__` read from `src`. A mismatched tag fails the job
+`pycps_sysml` and `sysmlpy`; and, on a tag, `${GITHUB_REF_NAME#v}` equals
+`pycps_sysml.__version__` read from `src`. A mismatched tag fails the job
 before anything is attached. On success the workflow attaches every file in
 `dist/` to the release.
 
@@ -36,5 +36,5 @@ before anything is attached. On success the workflow attaches every file in
 the tag carries the `v` and the version appears twice. Implementers pin that URL.
 
 **Verification.** Install from the URL into a clean venv and print
-`pycps_sysml2.__version__`; a failure means the tag and the package version
+`pycps_sysml.__version__`; a failure means the tag and the package version
 disagree or the wheel was never attached.

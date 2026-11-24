@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions, load
-from pycps_sysml2.parameters import (
+from pycps_sysml import core_definitions, load
+from pycps_sysml.parameters import (
     SSP_POLICY,
     applied_sets,
     mapping_specs,

@@ -8,7 +8,7 @@ From the workspace root (`pyssp_dev/`), with the workspace venv active (see
 [`examples/README.md`](../README.md#setup)):
 
 ```bash
-python repos/pycps_sysml2/examples/04-variant-bodies/run.py
+python repos/pycps_sysml/examples/04-variant-bodies/run.py
 ```
 
 ## Expected output

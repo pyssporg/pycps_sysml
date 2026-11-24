@@ -5,8 +5,8 @@ SysML v2 package that a test writes with `write_model` and loads; nothing is
 generated from them, so the tree holds inputs only.
 
 - **Conversion:** SysML v2 text → `Architecture` through
-  `pycps_sysml2.model.load`, then variation resolution
-  (`pycps_sysml2.parameters.variation.resolve`).
+  `pycps_sysml.model.load`, then variation resolution
+  (`pycps_sysml.parameters.variation.resolve`).
 - **Requirement / fault:** a variation point must be captured, resolved by its
   usage path, or refused by name — never flattened silently. The set pins
   definition-level, usage-level, body-level, nested, and attribute variation,
@@ -104,7 +104,7 @@ bytes cannot serve both the accepted and the rejected shape.
 
 ## Provenance
 
-Copied from `pyssporg/pyssp_sysml2`, commit `5856b41` (tag `v0.3.0`),
+Copied from `pyssporg/pyssp_sysml`, commit `5856b41` (tag `v0.3.0`),
 path `tests/fixtures/variation/`. Duplicated rather than referenced because
 this library has no dependency on the SSP toolchain; the model-level
 behaviour is still shared, so the same SysML documents are evidence in both

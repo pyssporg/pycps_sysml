@@ -3,7 +3,7 @@ requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pycps_sysml2"
+name = "pycps_sysml"
 dynamic = ["version"]
 description = "The SysML dialect layer for CPS artifacts: parser, IR, variation, selection, constraints, and marker/metadata accessors."
 readme = "README.md"
@@ -41,11 +41,11 @@ package-dir = {"" = "src"}
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = { attr = "pycps_sysml2.__version__" }
+version = { attr = "pycps_sysml.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["pycps_sysml2*"]
+include = ["pycps_sysml*"]
 
 [tool.ruff]
 # Lint selection is explicit so a ruff upgrade cannot change the gate.

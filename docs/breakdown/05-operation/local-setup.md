@@ -15,7 +15,7 @@ Python 3.11 or newer; CI covers 3.11 and 3.12. Work in a repository-local venv.
 python3 -m venv venv
 source venv/bin/activate
 pip install -e ".[dev]"
-python -c "import pycps_sysml2; print(pycps_sysml2.__version__)"
+python -c "import pycps_sysml; print(pycps_sysml.__version__)"
 ```
 
 The `dev` extra is `pytest`, `ruff`, and `build`. Runtime dependencies are the

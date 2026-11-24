@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pycps_sysml2 import EffectiveMembers, effective_members
-from pycps_sysml2.model import load
+from pycps_sysml import EffectiveMembers, effective_members
+from pycps_sysml.model import load
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions, load
-from pycps_sysml2.parameters import SSP_POLICY, resolve_selected
+from pycps_sysml import core_definitions, load
+from pycps_sysml.parameters import SSP_POLICY, resolve_selected
 
 MODEL = Path(__file__).with_name("model.sysml")
 COMPOSITION = "System"

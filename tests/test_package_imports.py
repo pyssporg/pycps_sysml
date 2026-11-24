@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import load
+from pycps_sysml import load
 from tests.testhelpers import write_model
 
 

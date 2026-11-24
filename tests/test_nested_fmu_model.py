@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions, load, validate
-from pycps_sysml2.metadata import fmu_metadata
-from pycps_sysml2.model import Architecture
+from pycps_sysml import core_definitions, load, validate
+from pycps_sysml.metadata import fmu_metadata
+from pycps_sysml.model import Architecture
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

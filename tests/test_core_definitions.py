@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions, load
-from pycps_sysml2.definitions import CORE_FILE
-from pycps_sysml2.metadata import (
+from pycps_sysml import core_definitions, load
+from pycps_sysml.definitions import CORE_FILE
+from pycps_sysml.metadata import (
     EXPERIMENT_FIELDS,
     add_fmu_metadata,
     fmu_metadata,
@@ -21,8 +21,8 @@ from pycps_sysml2.metadata import (
     validate_fmu_metadata_marker,
     validate_role_markers,
 )
-from pycps_sysml2.model import effective_members
-from pycps_sysml2.parameters import validate_marker_definitions
+from pycps_sysml.model import effective_members
+from pycps_sysml.parameters import validate_marker_definitions
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 

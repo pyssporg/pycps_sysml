@@ -10,11 +10,11 @@ from __future__ import annotations
 
 import pytest
 
-from pycps_sysml2.core.control import (
+from pycps_sysml.core.control import (
     RETIRED_ATTRIBUTES,
     validate_retired_attributes,
 )
-from pycps_sysml2.model import Architecture, Attribute, PartDefinition, PortDefinition
+from pycps_sysml.model import Architecture, Attribute, PartDefinition, PortDefinition
 
 
 def _architecture(*attribute_names: str) -> Architecture:

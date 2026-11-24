@@ -2,7 +2,7 @@
 id: INFO-011
 type: info
 title: Test port record
-summary: Which pyssp_sysml2 tests were dropped or split when the suite moved.
+summary: Which pyssp_sysml tests were dropped or split when the suite moved.
 date: 2026-11-05
 status: current
 ---
@@ -25,7 +25,7 @@ helpers stayed behind. `test_selection.py` (34) → `test_selection_model.py`
 kept their generic halves. `test_fixture_policy.py` kept the fixture half,
 extended so every `fixtures/*/case.md` carries the mandatory headings.
 `test_layering.py` kept two generic gates and gained the AST gate on
-`pyssp_standard` / `pyssp_sysml2` imports.
+`pyssp_standard` / `pyssp_sysml` imports.
 
 **Fixtures.** Generic inputs only: `sysml-model`, `quoted-names`, `arrays`,
 `configuration`, `constraints`, `variation`, `selection`, the three

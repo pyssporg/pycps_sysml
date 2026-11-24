@@ -1,6 +1,6 @@
 """Loader tests: sysmlpy → repo-owned model, and the export round trip.
 
-Everything here goes through the public ``pycps_sysml2.model`` surface
+Everything here goes through the public ``pycps_sysml.model`` surface
 (``load`` + dataclasses) so the tests stay insulated from sysmlpy, exactly
 like the rest of the repo.
 """
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from pycps_sysml2.model import Architecture, load
+from pycps_sysml.model import Architecture, load
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 
@@ -80,7 +80,7 @@ def test_multi_file_load_parses_all_roots_in_one_call(tmp_path, monkeypatch) -> 
         fixture_text("sysml-model/merge-b.sysml"),
     )
 
-    from pycps_sysml2.model import loader
+    from pycps_sysml.model import loader
 
     calls = []
     original = loader.parse_files

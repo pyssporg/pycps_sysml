@@ -9,7 +9,7 @@ status: current
 
 # Module map
 
-`src/pycps_sysml2/` is split by concern; the root re-exports `load`, the
+`src/pycps_sysml/` is split by concern; the root re-exports `load`, the
 dataclasses, and the validation report.
 
 | module | responsibility | may import |

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from pycps_sysml2 import core_definitions, load, validate
+from pycps_sysml import core_definitions, load, validate
 
 HERE = Path(__file__).parent
 COMPOSITION = "System"

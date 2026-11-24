@@ -6,34 +6,34 @@ from pathlib import Path
 
 import pytest
 
-from pycps_sysml2 import core_definitions
-from pycps_sysml2.metadata.fmu_metadata import (
+from pycps_sysml import core_definitions
+from pycps_sysml.metadata.fmu_metadata import (
     FmuMetadata,
     fmu_metadata,
     require_fmu_metadata,
 )
-from pycps_sysml2.metadata.roles import (
+from pycps_sysml.metadata.roles import (
     SSP_ROLES,
     Experiment,
     model_usage,
     read_experiment,
     require_resolved_variation,
 )
-from pycps_sysml2.metadata.ssp_metadata import ssp_metadata
-from pycps_sysml2.model import Architecture, load
-from pycps_sysml2.parameters.dialect.composition import (
+from pycps_sysml.metadata.ssp_metadata import ssp_metadata
+from pycps_sysml.model import Architecture, load
+from pycps_sysml.parameters.dialect.composition import (
     applied_sets,
     component_refs,
     set_usages,
 )
-from pycps_sysml2.parameters.dialect.declarations import (
+from pycps_sysml.parameters.dialect.declarations import (
     parameter_declarations,
     parameter_port,
 )
-from pycps_sysml2.parameters.dialect.mapping import mapping_entries
-from pycps_sysml2.parameters.dialect.markers import is_parameter_interface
-from pycps_sysml2.parameters.policy import SSP_POLICY
-from pycps_sysml2.parameters.variation import resolve
+from pycps_sysml.parameters.dialect.mapping import mapping_entries
+from pycps_sysml.parameters.dialect.markers import is_parameter_interface
+from pycps_sysml.parameters.policy import SSP_POLICY
+from pycps_sysml.parameters.variation import resolve
 from tests.fixture_files import fixture_text
 from tests.testhelpers import write_model
 
