@@ -26,7 +26,9 @@ classifiers = [
 # bump is a dialect decision (see docs/breakdown/03-implementation/sysmlpy-pin.md).
 dependencies = [
     "sysmlpy==0.96.4",
-    "pyssp-sysml-definitions>=0.1.0",
+    # Siblings are never resolved by bare PyPI name: the vocabulary ships only
+    # as a GitHub release asset, so it is pinned to that immutable wheel URL.
+    "pyssp-sysml-definitions @ https://github.com/pyssporg/pyssp_sysml_definitions/releases/download/v0.1.0/pyssp_sysml_definitions-0.1.0-py3-none-any.whl",
 ]
 
 [project.optional-dependencies]

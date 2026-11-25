@@ -25,8 +25,8 @@ pip install "pycps-sysml2 @ https://github.com/pyssporg/pycps_sysml/releases/dow
 ```
 
 Runtime dependencies are the exact `sysmlpy==0.96.4` parser pin and
-`pyssp-sysml-definitions>=0.1.0` for the shared vocabulary; the latter stays a
-plain specifier until its first release asset exists. From a checkout:
+`pyssp-sysml-definitions` for the shared vocabulary; the latter is pinned to
+its immutable `v0.1.0` release wheel, not a PyPI name. From a checkout:
 
 ```bash
 python3 -m venv venv
